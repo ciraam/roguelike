@@ -4,7 +4,7 @@
 
 ## Description
 
-Le projet consiste à créer un jeu de type **Roguelike** où le joueur explore un monde généré procéduralement avec pour objectif d'aller le plus loin possible. Le jeu propose des **combats en temps réel** et une **mort permanente**. À chaque nouvelle partie, le joueur perd toute sa progression et ses améliorations, mais certaines données (meilleurs scores, niveaux atteints, etc.) sont enregistrées dans une base de données locale pour permettre aux joueurs de comparer leurs scores et suivre leurs progrès au fil du temps.
+Le projet consiste à créer un jeu de type **Roguelike** en vue aérienne où le joueur explore un monde généré procéduralement avec pour objectif d'aller le plus loin possible. Le jeu propose des **combats en temps réel** et une **mort permanente**. À chaque nouvelle partie, le joueur perd toute sa progression et ses améliorations, mais certaines données (meilleurs scores, niveaux atteints, etc.) sont enregistrées dans une base de données locale pour permettre aux joueurs de comparer leurs scores et suivre leurs progrès au fil du temps.
 
 ## Technologies utilisées
 
