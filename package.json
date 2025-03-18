@@ -1,0 +1,16 @@
+{
+  "name": "roguelike",
+  "productName": "roguelikeGame",
+  "description": "Roguelike game by Romaric",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "1.0.0",
+  "author": "Romaric MION",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "35.0.1"
+  }
+}

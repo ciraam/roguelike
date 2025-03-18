@@ -4,7 +4,7 @@
 
 ## Description
 
-Le projet consiste à créer un jeu de type **Roguelike** en vue aérienne où le joueur explore un monde généré procéduralement avec pour objectif d'aller le plus loin possible. Le jeu propose des **combats en temps réel** et une **mort permanente**. À chaque nouvelle partie, le joueur perd toute sa progression et ses améliorations, mais certaines données (meilleurs scores, niveaux atteints, etc.) sont enregistrées dans une base de données locale pour permettre aux joueurs de comparer leurs scores et suivre leurs progrès au fil du temps.
+Le projet consiste à créer un jeu de type **Roguelike** où le joueur explore un monde généré aléatoirement avec pour objectif d'aller le plus loin possible. Le jeu propose des **combats en temps réel** et une **mort permanente**. À chaque nouvelle partie, le joueur perd toute sa progression et ses améliorations, mais certaines données (meilleurs scores, niveaux atteints, etc.) sont enregistrées dans une base de données locale pour permettre aux joueurs de comparer leurs scores et suivre leurs progrès au fil du temps.
 
 ## Technologies utilisées
 
@@ -16,10 +16,10 @@ Le projet consiste à créer un jeu de type **Roguelike** en vue aérienne où l
 
 ## Fonctionnalités
 
-### 1. Génération Procédurale
-- Les **niveaux** sont générés procéduralement à chaque partie, et plus les niveaux augmentent, plus la difficulté est élevée.
+### 1. Génération Aléatoire
+- Les **niveaux** sont générés aléatoirement à chaque partie, et plus les niveaux augmentent, plus la difficulté est élevée.
 - Chaque niveau peut être une salle **safe**, une salle remplie de **monstres**, ou une salle dite **soft**.
-- Les **ennemis** sont également placés procéduralement dans les salles, créant ainsi une expérience unique à chaque partie.
+- Les **ennemis** sont également placés aléatoirement dans les salles, créant ainsi une expérience unique à chaque partie.
 
 ### 2. Combat en Temps Réel
 - Les **combats** se déroulent en temps réel, où le joueur et les ennemis peuvent attaquer et se déplacer simultanément, sans attendre un tour de jeu.

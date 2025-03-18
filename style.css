@@ -1,0 +1,22 @@
+.titlebar {
+    height: 30px;
+    /* background: rgba(0, 0, 255, 0.253); */
+    color: rgb(241, 92, 92);
+    /* display: flex; */
+    /* justify-content: center; */
+    /* align-items: center; */
+    app-region: drag;
+    margin-top: -1.25%;
+    /* right: -5%; */
+    /* width: 50%; */
+    font-family: "Consolas";
+}
+body {
+    color: white;
+}
+#icon {
+    margin-top: 5%;
+}
+#info {
+    height: 90%;
+}
