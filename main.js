@@ -72,3 +72,7 @@ ipcMain.on('addScore', (event, scoreData) => {
     console.log("Données invalides reçues dans le main process");
   }
 });
+// à finir
+// ipcMain.send('getScoreById', (event, scoreData) => {
+//   
+// });
