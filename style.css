@@ -1,22 +1,24 @@
 .titlebar {
-    height: 30px;
-    /* background: rgba(0, 0, 255, 0.253); */
     color: rgb(241, 92, 92);
-    /* display: flex; */
-    /* justify-content: center; */
-    /* align-items: center; */
+    background: rgba(128, 128, 128, 0.336);
+    padding: 5.3px;
+    display: flex;
     app-region: drag;
-    margin-top: -1.25%;
-    /* right: -5%; */
-    /* width: 50%; */
+    margin-top: -1.215%;
+    margin-left: 15%;
+    border-radius: 8px;
     font-family: "Consolas";
 }
 body {
     color: white;
+    overflow: hidden;
 }
 #icon {
-    margin-top: 5%;
+    margin-right: 6px;
 }
 #info {
-    height: 90%;
+    font-size: 12px;
+    position: relative;
+    justify-self: center;
+    margin-top: 95%;
 }

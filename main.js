@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain,  Menu, MenuItem, Notification  } = require('electron/main')
-const path = require('node:path')
+const { app, BrowserWindow, ipcMain,  Menu, MenuItem, Notification  } = require('electron/main');
+const path = require('node:path');
+const bdd = require('./database.js');
 
-app.disableHardwareAcceleration()
+app.disableHardwareAcceleration();
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -9,48 +10,65 @@ const createWindow = () => {
     height: 700,
     titleBarStyle: 'hidden',
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    }
-  })
-  win.webContents.setFrameRate(60)
-  win.resizable = false
-  win.setBackgroundColor('rgba(61, 61, 61, 0.5)')
-  win.loadFile('index.html')
-  
+    nodeIntegration: false,
+    contextIsolation: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js') }
+  });
+  win.webContents.setFrameRate(60);
+  win.resizable = false;
+  win.setBackgroundColor('rgba(61, 61, 61, 0.5)');
+  win.loadFile('index.html');
+  win.webContents.openDevTools();
 }
 
-// test depuis le process
-const NOTIFICATION_TITLE = 'Notification test';
-const NOTIFICATION_BODY = 'je test l\'envoie de notification du pc depuis l\'application';
-function showNotification() {
-  new Notification({ title: NOTIFICATION_TITLE, body: NOTIFICATION_BODY }).show()
+// envoyer une notification bureau
+function sendNotification(title, content) {
+  new Notification({ title: title, body: content }).show();
 }
 
-const menu = new Menu()
+// pour tester les notifs et l'input clavier
+const menu = new Menu();
 menu.append(new MenuItem({
-  // label: 'Electron',
+  label: 'Electron',
   submenu: [{
     role: 'help',
     accelerator: process.platform === 'darwin' ? 'Space+Cmd' : 'Space+Shift',
-    click: () => { showNotification() }
+    click: () => { sendNotification('test input & notif', 'azertyuiopqsdfghjklmwxcvbn'); }
   }]
-}))
-
-Menu.setApplicationMenu(menu)
+}));
+Menu.setApplicationMenu(menu);
 
 app.whenReady().then(() => {
-    ipcMain.handle('ping', () => 'pong')
-    createWindow()
-    // pour macOS
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-          createWindow()
-        }
-    })
-})
+  ipcMain.handle('ping', () => 'pong');
+  createWindow();
+  // pour macOS
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
 
 // pour Windows & Linux
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
-})
+  if (process.platform !== 'darwin') app.quit();
+  mainWindow = null;
+  bdd.dbEnd();
+});
+
+// test écouteur pour l'envoie d'une notification
+ipcMain.on('sendNotification', (event, notifData) => {
+  const { title, content } = notifData;
+  sendNotification(title, content);
+});
+
+// côté bdd //
+ipcMain.on('addScore', (event, scoreData) => {
+  const { score_user_id, score_level_player, score_level_stage, score_kill, score_time } = scoreData;
+  console.log("Données reçues dans le main process:", scoreData);
+  if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
+    bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
+  } else {
+    console.log("Données invalides reçues dans le main process");
+  }
+});
