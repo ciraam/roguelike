@@ -11,7 +11,7 @@ Le projet consiste à créer un jeu de type **Roguelike** où le joueur explore 
 - **Javascript**
 - **Node.js**
 - **Electron** (framework)
-- **SQLite** (base de données locale)
+- **MySQL** (base de données)
 - **HTML/CSS**
 
 ## Fonctionnalités
@@ -38,7 +38,7 @@ Le projet consiste à créer un jeu de type **Roguelike** où le joueur explore 
 - Lors de la mort du personnage, le **score** (niveau atteint, ennemis tués, etc.) est comparé aux scores déjà enregistrés dans la base de données.
 - Un **tableau des meilleurs scores** est affiché, permettant au joueur de voir ses résultats précédents et ceux des autres joueurs.
 
-## Base de données : **SQLite**
+## Base de données : **MySQL**
 
 ### 1. Table des Joueurs
 
