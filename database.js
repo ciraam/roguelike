@@ -1,5 +1,6 @@
 const { app, Notification } = require('electron');
 const mysql = require('mysql2');
+let id = null;
 
 function sendNotification(title, content) {
     app.whenReady().then(() => {
@@ -21,20 +22,6 @@ db.connect((err) => {
         sendNotification('Connexion', 'Connexion à la base de données MySQL réussie');
     }
 });
-
-// const filePath = path.join(__dirname, 'DONT-REMOVE.txt');
-// if (fs.existsSync(filePath)) {
-//     console.log('Le fichier existe.');
-// } else {
-//     fs.writeFile(filePath, 'app already started', (err) => {
-//         if (err) {
-//             console.log('Erreur lors de la création du fichier:', err);
-//         } else {
-//             console.log('Fichier créé avec succès !');
-//             sendNotification('Premier lancement', 'Bienvenue ... !');
-//         }
-//     });
-// }
 
 function dbEnd() {
     db.end();
@@ -65,9 +52,53 @@ function getScoresById(score_user_id) {
     });
 }
 
+function addUser(user_pseudo) {
+    const query = `INSERT INTO user (user_pseudo) VALUES (?)`;
+    db.query(query, [user_pseudo], (err, results) => {
+        if (err) {
+            console.log('Erreur lors de l\'insertion de l\'user:', err);
+            sendNotification('Erreur lors de l\'insertion de l\'user:', `${err.code}: ${err.message}`);
+        } else {
+            console.log('User ajouté avec succès!');
+            sendNotification('User ajouté !', results);
+            id = parseInt(getUserById(results.insertId));
+        }
+    });
+}
+
+function getUserById(user_id) {
+    const query = `SELECT * FROM user WHERE user_id = ?`;
+    db.query(query, [user_id], (err, results) => {
+        if (err) {
+            console.log('Erreur lors de la récupération de l\'user:', err);
+        } else {
+            console.log('User récupéré:', results);
+            sendNotification('renvoie user', results);
+            id = parseInt(results.user_id);
+        }
+    });
+}
+
+function getUsers(callback) {
+    const query = `SELECT * FROM user`;
+    db.query(query, (err, results) => {
+        if (err) {
+            console.log('Erreur lors de la récupération des users:', err);
+            callback(err, null);
+        } else {
+            console.log('Users récupérés:', results);
+            // sendNotification('renvoie users', results);
+            callback(null, results);
+        }
+    });
+}
+
 // pour utiliser dans le main & le renderer principalement
 module.exports = {
     addScore,
     getScoresById,
+    addUser,
+    getUsers,
+    getUserById,
     dbEnd
 };

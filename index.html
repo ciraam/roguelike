@@ -10,20 +10,28 @@
   </head>
   <body>
     <div class="titlebar"><img src="img/icone.webp" id="icon" height="20" width="20" alt="Roguelike img" title="Roguelike"/>Roguelike Project 1.0.0</div>
-    <h2>Bienvenue sur Roguelike (nom à changer) ! 👋</h2>
-    <button>Jouer</button>
-    <button>Option</button>
-    <button>Quitter</button>
-    <button id="test">test</button>
+    <span id="btnResNTime">
+      <span id="restartButton">🔄</span>
+      <span id="time">
+        <span id="hours"></span>
+        <span id="separator">:</span>
+        <span id="minutes"></span>
+        </span>
+      </span>
+    </span>
+    <div id="menu">
+
+    </div>
+    <button id="buttonWelcome">welcome</button>
     <ul id="score-list"></ul>
-    <p id="info"></p>
+    <div id="modal" class="modal">
+      <div class="modal-content">
+          <h3 id="modalTitle"></h3>
+          <span id="closeModal" class="close">&times;</span>
+          <span id="modalContent"></span>
+      </div>
+    </div>
+    <!-- <p id="info"></p> -->
   </body>
   <script src="./renderer.js"></script>
-  <!-- <script>const test = document.getElementById('test');
-    if(test) {
-        console.log('ok if');
-    }
-    function test() {
-        console.log('ok onclick');
-    }</script> -->
 </html>

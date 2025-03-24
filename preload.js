@@ -9,10 +9,18 @@ contextBridge.exposeInMainWorld('versions', {
   // Nous pouvons exposer des variables en plus des fonctions
 });
 
-contextBridge.exposeInMainWorld('electron', {
+contextBridge.exposeInMainWorld('db', {
   ipcRenderer: {
     send: (channel, data) => ipcRenderer.send(channel, data),
     on: (channel, func) => ipcRenderer.on(channel, func),
     once: (channel, func) => ipcRenderer.once(channel, func)
   }
+});
+contextBridge.exposeInMainWorld('electron', {
+  restartApp: () => ipcRenderer.send('restart-app')
+});
+contextBridge.exposeInMainWorld('path', {
+  fileExists: () => ipcRenderer.invoke('fileExists'),
+  readFile: () => ipcRenderer.invoke('readFile')
+  // writeFile: (fileData) => ipcRenderer.send('writeFile', fileData)
 });

@@ -1,24 +1,161 @@
-.titlebar {
-    color: rgb(241, 92, 92);
-    background: rgba(128, 128, 128, 0.336);
-    padding: 5.3px;
-    display: flex;
-    app-region: drag;
-    margin-top: -1.215%;
-    margin-left: 15%;
-    border-radius: 8px;
-    font-family: "Consolas";
+:root {
+    --themeColor: rgba(128, 128, 128, 0.336);
+    --themeColorHover: #555;
 }
 body {
     color: white;
     overflow: hidden;
+    font-family: "Consolas", cursive;
+}
+.titlebar {
+    color: rgb(241, 92, 92);
+    background: var(--themeColor);
+    padding: 5.7px;
+    display: flex;
+    app-region: drag;
+    position: relative;
+    top: -7.9px;
+    margin-left: 15%;
+    border-radius: 8px;
+}
+#btnResNTime {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: -4%;
+}
+#restartButton {
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: -3.5%;
+    padding: 0.5%;
+    border-radius: 31%;
+    background-color: var(--themeColor);
+}
+#restartButton:hover {
+    background-color: var(--themeColorHover);
+}
+#time {
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #a0a0a0;
+    display: flex;
+    gap: -2px;
+    font-weight: bold;
+    background-color: var(--themeColor);
+    width: 6.6%;
+    padding: 3px;
+    padding-top: -2px;
+    padding-bottom: 1.75px;
+    padding-left: -1.5px;
+    border-radius: 8px;
+}
+button {
+    font-family: "Consolas", cursive;
+    display: inline;
+    background-color: var(--themeColor);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+button:hover {
+    background-color: var(--themeColorHover);
+}
+h2 {
+    text-align: center;
+    /* margin-top: 40px; */
+}
+#menuStart {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+#buttonWelcome {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
 }
 #icon {
     margin-right: 6px;
 }
-#info {
+/* #info {
     font-size: 12px;
     position: relative;
     justify-self: center;
-    margin-top: 95%;
+    margin-top: 50%;
+} */
+
+/* clignotement ":" de l'heure */
+#separator {
+    animation: blink 1s step-start 0s infinite;
+}
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+.modal-content {
+    background-color: #fff;
+    color: black;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+.close {
+    color: #aaa;
+    display: inline;
+    float: right;
+    margin-top: -17.5%;
+    margin-left: 95%;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#buttonPseudo {
+    display: inline;
+    background-color: var(--themeColor);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
 }
