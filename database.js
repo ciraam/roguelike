@@ -34,8 +34,8 @@ function addScore(score_user_id, score_level_player, score_level_stage, score_ki
             console.log('Erreur lors de l\'insertion du score:', err);
             sendNotification('Erreur lors de l\'insertion du score', `${err.code}: ${err.message}`);
         } else {
-            console.log('Score ajouté avec succès!');
-            sendNotification('Score ajouté !', results);
+            // console.log('Score ajouté avec succès!');
+            // sendNotification('Score ajouté !', results);
         }
     });
 }
@@ -59,8 +59,8 @@ function addUser(user_pseudo) {
             console.log('Erreur lors de l\'insertion de l\'user:', err);
             sendNotification('Erreur lors de l\'insertion de l\'user:', `${err.code}: ${err.message}`);
         } else {
-            console.log('User ajouté avec succès!');
-            sendNotification('User ajouté !', results);
+            // console.log('User ajouté avec succès!');
+            // sendNotification('User ajouté !', results);
             id = parseInt(getUserById(results.insertId));
         }
     });
@@ -72,8 +72,8 @@ function getUserById(user_id) {
         if (err) {
             console.log('Erreur lors de la récupération de l\'user:', err);
         } else {
-            console.log('User récupéré:', results);
-            sendNotification('renvoie user', results);
+            // console.log('User récupéré:', results);
+            // sendNotification('renvoie user', results);
             id = parseInt(results.user_id);
         }
     });
@@ -86,7 +86,7 @@ function getUsers(callback) {
             console.log('Erreur lors de la récupération des users:', err);
             callback(err, null);
         } else {
-            console.log('Users récupérés:', results);
+            // console.log('Users récupérés:', results);
             // sendNotification('renvoie users', results);
             callback(null, results);
         }

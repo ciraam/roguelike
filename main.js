@@ -64,9 +64,16 @@ ipcMain.on('sendNotification', (event, notifData) => {
   sendNotification(title, content);
 });
 
-ipcMain.on('restart-app', () => {
+ipcMain.on('restart', () => {
   app.relaunch();
   app.quit();
+});
+
+ipcMain.on('end', () => {
+  mainWindow = null;
+  id = null;
+  app.quit();
+  bdd.dbEnd();
 });
 
 const filePath = path.join(__dirname, 'node_modules/env-paths/licenseDONTTOUCH.txt');
@@ -88,11 +95,11 @@ ipcMain.handle('readFile', () => {
 ipcMain.on('addUser', (event, userData) => {
   const { user_pseudo } = userData;
   console.log("addUser le main process:", user_pseudo);
-  if (pseudo !== undefined) { // je sais pas pourquoi cela renvoie undefined alors que coté renderer c'est niquel
+  if (user_pseudo !== undefined) {
     bdd.addUser(user_pseudo);
-    if(bdd.id != null) {
-      fs.writeFileSync(filePath, bdd.id);
-    }
+    // if(bdd.id != null) {
+    //   fs.writeFileSync(filePath, bdd.id);
+    // }
   } else {
     console.log("addUser invalides reçues dans le main process");
   }

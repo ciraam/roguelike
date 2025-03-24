@@ -16,8 +16,9 @@ contextBridge.exposeInMainWorld('db', {
     once: (channel, func) => ipcRenderer.once(channel, func)
   }
 });
-contextBridge.exposeInMainWorld('electron', {
-  restartApp: () => ipcRenderer.send('restart-app')
+contextBridge.exposeInMainWorld('system', {
+  restart: () => ipcRenderer.send('restart'),
+  end: () => ipcRenderer.send('end')
 });
 contextBridge.exposeInMainWorld('path', {
   fileExists: () => ipcRenderer.invoke('fileExists'),
