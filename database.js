@@ -40,7 +40,7 @@ function addScore(score_user_id, score_level_player, score_level_stage, score_ki
     });
 }
 
-function getScoresById(score_user_id) {
+function getScoreById(score_user_id) {
     const query = `SELECT * FROM score WHERE score_user_id = ?`;
     db.query(query, [score_user_id], (err, results) => {
         if (err) {
@@ -61,7 +61,7 @@ function addUser(user_pseudo) {
         } else {
             // console.log('User ajouté avec succès!');
             // sendNotification('User ajouté !', results);
-            id = parseInt(getUserById(results.insertId));
+            getUserById(results.insertId);
         }
     });
 }
@@ -96,7 +96,7 @@ function getUsers(callback) {
 // pour utiliser dans le main & le renderer principalement
 module.exports = {
     addScore,
-    getScoresById,
+    getScoreById,
     addUser,
     getUsers,
     getUserById,

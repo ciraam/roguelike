@@ -148,16 +148,44 @@ function menu() {
                 }
             } else if(state == "1") {
                 menuBalise.innerHTML = `
-                <div id="optionsStart">
-                    <h2>Options</h2></br></br>
-                    <button id="buttonSound" class="buttonOptions">Son</button>
-                    <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
-                </div></br></br><span id="menuBack" class="buttonOptions">←</span>`;
-                const menuBack = document.getElementById('menuBack');
+                    <div id="optionsStart">
+                        <h2>Options</h2><br><br>
+                        <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
+                        <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
+                    </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
 
-                document.querySelectorAll('.buttonOptions').addEventListener('click', (elements) => { 
-                    if(elements.id == "")
-                    state = 0; menu(); 
+                document.querySelectorAll('.buttonOptions').forEach(button => {
+                    button.addEventListener('click', (event) => { 
+                        if (event.target.id == "menuBack") {
+                            state = 0; 
+                            menu(); 
+                        } 
+                        else if (event.target.id == "buttonSound") {
+                            const buttonSound = event.target;
+                            buttonSound.getAttribute('data-sound');
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                event.target.style.backgroundColor = "";
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                event.target.style.backgroundColor = "red";
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') === 'off' ? 'ON' : 'OFF'}`;
+                            // gérer l'état du son (mute/unmute)
+                        } 
+                        else if (event.target.id == "buttonLore") { // ne disparait pas au 2ème clique
+                            const loreContent = document.getElementById("loreContent");
+                            if (loreContent) {
+                                loreContent.remove();
+                            } else {
+                                document.getElementById('optionsStart').innerHTML += `
+                                    <div id="loreContent">
+                                        <span>Touches : ZQSD</span>
+                                        <span>Lore : Ceci est un secret !</span>
+                                    </div>`;
+                            }
+                        }  
+                    });
                 });
             } else if(state == "2") {
                 system.end();
@@ -166,7 +194,7 @@ function menu() {
     });
 }
 
-function modalFirstStart() { // problème pour relancer la modale si erreur
+function modalFirstStart() { // problème pour relancer la modale si champ vide ou pseudo déjà utilisé
     openModal();
     modalTitle.innerHTML = `<span>Bienvenue</span>`;
     modalContent.innerHTML = `</br></br></br><form><span>Entrez votre pseudo</span>`;
