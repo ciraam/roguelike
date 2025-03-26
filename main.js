@@ -19,7 +19,7 @@ const createWindow = () => {
   win.resizable = false;
   win.setBackgroundColor('rgba(61, 61, 61, 0.5)');
   win.loadFile('index.html');
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 // envoyer une notification bureau

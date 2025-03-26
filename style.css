@@ -197,12 +197,14 @@ h2 {
     left: 26%;
     margin-top: 15%;
     gap: 10px;
+    overflow-y: auto;
 }
 #loreContent {
     display: flex;
     flex-direction: column;
     text-align: center;
-    width: 45%;
+    /* width: 70%; */
+    /* max-width: 100px; */
     position: relative;
     left: 26%;
     /* margin-top: 15%; */
@@ -210,4 +212,5 @@ h2 {
     background-color: #fff;
     color: black;
     border-radius: 5px;
+    overflow-y: auto;
 }

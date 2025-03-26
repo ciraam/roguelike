@@ -170,7 +170,7 @@ function menu() {
                                 buttonSound.setAttribute('data-sound', 'on');
                                 event.target.style.backgroundColor = "red";
                             }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') === 'off' ? 'ON' : 'OFF'}`;
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
                             // gérer l'état du son (mute/unmute)
                         } 
                         else if (event.target.id == "buttonLore") { // ne disparait pas au 2ème clique
@@ -180,8 +180,25 @@ function menu() {
                             } else {
                                 document.getElementById('optionsStart').innerHTML += `
                                     <div id="loreContent">
-                                        <span>Touches : ZQSD</span>
-                                        <span>Lore : Ceci est un secret !</span>
+                                        <span><b>Touches</b></span>
+                                        <ul>
+                                            <li><u>Déplacement</u></li>
+                                                - En haut : Z </br>
+                                                - À droite : D </br>
+                                                - À gauche : Q </br>
+                                                - En bas : S </br>
+                                            <li><u>Tirer</u></li>
+                                                - Barre espace (Spacebar) </br>
+                                            <li><u>Viser</u></li>
+                                                - En haut : UP</br>
+                                                - À droite : RIGHT</br>
+                                                - À gauche : LEFT</br>
+                                                - En bas : BOTTOM</br>
+                                            <li><u>Mettre en pause</u></li>
+                                                - ECHAP
+                                        </ul>
+                                        <span><b>Lore</b></span>
+                                            <span>Vous voilà dans un unviers...</span>
                                     </div>`;
                             }
                         }  
