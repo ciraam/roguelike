@@ -1,7 +1,3 @@
-// const db = window.db;
-// const game = window.game;
-// const versions = window.versions;
-
 let userData = {
     user_pseudo: "",
     user_name: "",
@@ -21,26 +17,26 @@ let notifData = {
     content: ""
 };
 
-if (db) {
-    // notifData = { title: "debug", content: "test" };
-    // db.ipcRenderer.send('sendNotification', notifData);
-    // test ajout d'un score
-    // db.ipcRenderer.send('addScore', scoreData);
-    // console.log(scoreData);
-    // test récupération d'un score
-    // db.ipcRenderer.send('getScoreById', (event, highScores) => {
-    //     const scoreList = document.getElementById('score-list');
-    //     scoreList.innerHTML = '';
-    //     highScores.forEach(score => {
-    //         const listItem = document.createElement('li');
-    //         listItem.textContent = `${score.player_name}: ${score.score}`;
-    //         scoreList.appendChild(listItem);
-    //     });
-    // });
+// if (db) {
+//     notifData = { title: "debug", content: "test" };
+//     db.ipcRenderer.send('sendNotification', notifData);
+//   // test ajout d'un score
+//     db.ipcRenderer.send('addScore', scoreData);
+//     console.log(scoreData);
+//   // test récupération d'un score
+//     db.ipcRenderer.send('getScoreById', (event, highScores) => {
+//         const scoreList = document.getElementById('score-list');
+//         scoreList.innerHTML = '';
+//         highScores.forEach(score => {
+//             const listItem = document.createElement('li');
+//             listItem.textContent = `${score.player_name}: ${score.score}`;
+//             scoreList.appendChild(listItem);
+//         });
+//     });
 
-} else {
-    console.log('ipcRenderer n\'est pas disponible dans le renderer');
-}
+// } else {
+//     console.log('ipcRenderer n\'est pas disponible dans le renderer');
+// }
 
 // const information = document.getElementById('info');
 // information.innerText = `Cette application utilise Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), et Electron (v${versions.electron()})`;
@@ -51,23 +47,14 @@ const func = async () => {
 }
 func();
 
-// test pour afficher les meilleurs score
-// ipcRenderer.on('test', (event, highScores) => {
-//     const scoreList = document.getElementById('score-list');
-//     scoreList.innerHTML = '';
-//     highScores.forEach(score => {
-//         const listItem = document.createElement('li');
-//         listItem.textContent = `${score.player_name}: ${score.score}`;
-//         scoreList.appendChild(listItem);
-//     });
-// });
-
 // document.getElementById('buttonWelcome').addEventListener('click', function() {
 //     welcome();
 // }); 
 // function welcome() {
 //     alert("Bienvenue sur mon jeu, amusez-vous bien ! 😎");
 // }
+
+// permet de relancer l'app (pour éviter de retaper la cmd surtout)
 document.getElementById('restartButton').addEventListener('click', () => {
     system.restart();
 });
@@ -107,11 +94,12 @@ function closeModalFunction() {
 }
 closeModal.onclick = closeModalFunction;
 window.onclick = function(event) {
-    if (event.target === modal) {
+    if (event.target == modal) {
         closeModalFunction();
     }
 }
 
+// permet de gérer le contenu de l'app
 state = null;
 const menuBalise = document.getElementById('menu');
 if(menuBalise) {
@@ -138,77 +126,188 @@ function menu() {
             }
             if(state == "0") {
                 // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier & création de son "profil"
-                if (path.fileExists().results) {
-                    console.log('Le fichier existe.');
-                    const content =  path.readFile();
-                    console.log('Contenu du fichier:', content);
-                    db.ipcRenderer.send('getUserById', parseInt(content));
-                } else {
-                    modalFirstStart();
-                }
+                // if (path.fileExists()) {
+                //     console.log('✅');
+                //     // à modifier
+                //     // const content =  path.readFile();
+                //     // console.log('Contenu du fichier:', content[-1]);
+                // } else {
+                //     modalFirstStart();
+                // }
+                path.fileExists().then(exists => {
+                    if (exists) {
+                        console.log('✅');
+                        return path.readFile();
+                    } else {
+                        // if(buttonSound.getAttribute('data-sound') == 'on') {
+                        //     buttonSound.setAttribute('data-sound', 'off');
+                        //     event.target.style.backgroundColor = "";
+                        // } else {
+                        //     buttonSound.setAttribute('data-sound', 'on');
+                        //     backgroundColorRed;
+                        // }
+                        // event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                        // // + gérer l'état du son (mute/unmute)
+                        // return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                    }
+                }).then(content => {
+                    if (content) {
+                        // if(buttonSound.getAttribute('data-sound') == 'on') {
+                        //     buttonSound.setAttribute('data-sound', 'off');
+                        //     event.target.style.backgroundColor = "";
+                        // } else {
+                        //     buttonSound.setAttribute('data-sound', 'on');
+                        //     backgroundColorRed;
+                        // }
+                        // event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                        // // + gérer l'état du son (mute/unmute) off = 1 / on = 0
+                        // return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                    } else {
+                        return console.log('📝');
+                    }
+                }).catch(console.error);
             } else if(state == "1") {
-                menuBalise.innerHTML = `
-                    <div id="optionsStart">
-                        <h2>Options</h2><br><br>
-                        <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
-                        <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
-                    </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
-
-                document.querySelectorAll('.buttonOptions').forEach(button => {
-                    button.addEventListener('click', (event) => { 
-                        if (event.target.id == "menuBack") {
-                            state = 0; 
-                            menu(); 
-                        } 
-                        else if (event.target.id == "buttonSound") {
-                            const buttonSound = event.target;
-                            buttonSound.getAttribute('data-sound');
-                            if(buttonSound.getAttribute('data-sound') == 'on') {
-                                buttonSound.setAttribute('data-sound', 'off');
-                                event.target.style.backgroundColor = "";
-                            } else {
-                                buttonSound.setAttribute('data-sound', 'on');
-                                event.target.style.backgroundColor = "red";
-                            }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                            // gérer l'état du son (mute/unmute)
-                        } 
-                        else if (event.target.id == "buttonLore") { // ne disparait pas au 2ème clique
-                            const loreContent = document.getElementById("loreContent");
-                            if (loreContent) {
-                                loreContent.remove();
-                            } else {
-                                document.getElementById('optionsStart').innerHTML += `
-                                    <div id="loreContent">
-                                        <span><b>Touches</b></span>
-                                        <ul>
-                                            <li><u>Déplacement</u></li>
-                                                - En haut : Z </br>
-                                                - À droite : D </br>
-                                                - À gauche : Q </br>
-                                                - En bas : S </br>
-                                            <li><u>Tirer</u></li>
-                                                - Barre espace (Spacebar) </br>
-                                            <li><u>Viser</u></li>
-                                                - En haut : UP</br>
-                                                - À droite : RIGHT</br>
-                                                - À gauche : LEFT</br>
-                                                - En bas : BOTTOM</br>
-                                            <li><u>Mettre en pause</u></li>
-                                                - ECHAP
-                                        </ul>
-                                        <span><b>Lore</b></span>
-                                            <span>Vous voilà dans un unviers...</span>
-                                    </div>`;
-                            }
-                        }  
-                    });
-                });
+                menuOptions(0);
             } else if(state == "2") {
                 system.end();
             }
         }); 
     });
+}
+
+function menuOptions(state) {
+    if(state == 0) {
+        menuBalise.innerHTML = `
+            <div id="optionsStart">
+                <h2>Options</h2><br><br>
+                <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
+                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
+            </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
+        document.querySelectorAll('.buttonOptions').forEach(button => {
+            button.addEventListener('click', (event) => { 
+                if (event.target.id == "menuBack") {
+                    state = 0; 
+                    menu(); 
+                } 
+                else if (event.target.id == "buttonSound") {
+                    const buttonSound = event.target;
+                    const backgroundColorRed = event.target.style.backgroundColor = "red";
+                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
+                    path.fileSettingsExists().then(exists => {
+                        if (exists) {
+                            console.log('✅');
+                            return path.readFileSettings();
+                        } else {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                event.target.style.backgroundColor = "";
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                backgroundColorRed;
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                            // + gérer l'état du son (mute/unmute)
+                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                        }
+                    }).then(content => {
+                        if (content) {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                event.target.style.backgroundColor = "";
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                backgroundColorRed;
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0
+                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                        } else {
+                            return console.log('📝');
+                        }
+                    }).catch(console.error);
+                } 
+                else if (event.target.id == "buttonLore") {
+                    menuOptions(state == 0 ? 1 : 0);
+                }  
+            });
+        });
+    } else if(state == 1) {
+        menuBalise.innerHTML = `
+            <div id="optionsStart">
+                <h2>Options</h2><br><br>
+                <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
+                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
+                <div id="loreContent">
+                    <span><b>Touches</b></span>
+                    <ul>
+                        <li><u>Déplacement</u></li>
+                            - En haut : Z </br>
+                            - À droite : D </br>
+                            - À gauche : Q </br>
+                            - En bas : S </br>
+                        <li><u>Tirer</u></li>
+                            - Barre espace (Spacebar) </br>
+                        <li><u>Viser</u></li>
+                            - En haut : UP</br>
+                            - À droite : RIGHT</br>
+                            - À gauche : LEFT</br>
+                            - En bas : BOTTOM</br>
+                        <li><u>Mettre en pause</u></li>
+                            - ECHAP
+                    </ul>
+                    <span><b>Lore</b></span>
+                        <span>Vous voilà dans un unviers...</span>
+                </div>
+            </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
+        document.querySelectorAll('.buttonOptions').forEach(button => {
+            button.addEventListener('click', (event) => { 
+                if (event.target.id == "menuBack") {
+                    state = 0; 
+                    menu(); 
+                } 
+                else if (event.target.id == "buttonSound") {
+                    const buttonSound = event.target;
+                    const backgroundColorDefault = event.target.style.backgroundColor = "";
+                    const backgroundColorRed = event.target.style.backgroundColor = "red";
+                    // gérer l'état du son (mute/unmute) off = 1 / on = 0
+                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
+                    path.fileSettingsExists().then(exists => {
+                        if (exists) {
+                            console.log('✅');
+                            return path.readFileSettings();
+                        } else {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                backgroundColorDefault;
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                backgroundColorRed;
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') === 'off' ? '0' : '1');
+                        }
+                    }).then(content => {
+                        if (content) {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                backgroundColorDefault;
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                backgroundColorRed;
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
+                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') === 'off' ? '0' : '1');
+                        } else {
+                            return console.log('📝');
+                        }
+                    }).catch(console.error);
+                } 
+                else if (event.target.id == "buttonLore") {
+                    menuOptions(state == 0 ? 1 : 0);
+                }  
+            });
+        });
+    }
 }
 
 function modalFirstStart() { // problème pour relancer la modale si champ vide ou pseudo déjà utilisé

@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('system', {
 });
 contextBridge.exposeInMainWorld('path', {
   fileExists: () => ipcRenderer.invoke('fileExists'),
-  readFile: () => ipcRenderer.invoke('readFile')
-  // writeFile: (fileData) => ipcRenderer.send('writeFile', fileData)
+  readFile: () => ipcRenderer.invoke('readFile'),
+  fileSettingsExists: () => ipcRenderer.invoke('fileSettingsExists'),
+  readFileSettings: () => ipcRenderer.invoke('readFileSettings'),
+  writeFileSettings: (fileData) => ipcRenderer.send('writeFileSettings', fileData)
 });
