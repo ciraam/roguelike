@@ -131,14 +131,6 @@ function menu() {
             }
             if(state == 0) {
                 // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier & création de son "profil"
-                // if (path.fileExists()) {
-                //     console.log('✅');
-                //     // à modifier
-                //     // const content =  path.readFile();
-                //     // console.log('Contenu du fichier:', content[-1]);
-                // } else {
-                //     modalFirstStart();
-                // }
                 path.fileExists().then(exists => {
                     if (exists) {
                         console.log('✅');
@@ -339,10 +331,54 @@ function menuOptions(settingState) { // à finir (mute/unmute) + afficher l'éta
 
 function menuGame() {
     menuBalise.innerHTML = `
-        <div id="optionsStart">
-            <h2>BIENVENUE</h2><br><br>
-            <p>Pierre Chartier, X2007, head of trading hybdride & vol</p>
+        <div class="game-container">
+            <span class="game-header">
+                <h2>Bienvenue</h2>
+            </span>
+            
+            <nav class="main-menu">
+                <div class="menu-item play" id="play-btn">
+                    <div class="menu-icon">▶</div>
+                    <div class="menu-text">Jouer</div>
+                </div>
+                
+                <div class="menu-item rankings" id="rankings-btn">
+                    <div class="menu-icon">🏆</div>
+                    <div class="menu-text">Classement</div>
+                </div>
+                
+                <div class="menu-item profile" id="profile-btn">
+                    <div class="menu-icon">👤</div>
+                    <div class="menu-text">Profil</div>
+                </div>
+                
+                <div class="menu-item settings" id="settings-btn">
+                    <div class="menu-icon">⚙️</div>
+                    <div class="menu-text">Options</div>
+                </div>
+            </nav>
+            
+            <footer class="game-footer">
+                <p>© 2023 ciraam dev</p>
+            </footer>
         </div>`;
+    const playBtn = document.getElementById('play-btn');
+    const rankingsBtn = document.getElementById('rankings-btn');
+    const profileBtn = document.getElementById('profile-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    playBtn.addEventListener('click', function() {
+        // Redirection vers l'écran de jeu
+    });
+    rankingsBtn.addEventListener('click', function() {
+        // Redirection vers le classement
+    });
+    profileBtn.addEventListener('click', function() {
+        // Redirection vers le profil
+    });       
+    settingsBtn.addEventListener('click', function() {
+        // Redirection vers les options
+    });
+
 }
 
 function modalFirstStart() { // problème pour relancer la modale si champ vide ou pseudo déjà utilisé
