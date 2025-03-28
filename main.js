@@ -19,7 +19,7 @@ const createWindow = () => {
   win.resizable = false;
   win.setBackgroundColor('rgba(61, 61, 61, 0.5)');
   win.loadFile('index.html');
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 // envoyer une notification bureau
@@ -76,7 +76,7 @@ ipcMain.on('end', () => {
 });
 
 // vérifie si l'user a déjà lancé l'app
-const filePath = path.join(__dirname, 'DONTTOUCH.txt');
+const filePath = path.join(__dirname, 'node_modules/keyv/DONTTOUCH.txt');
 ipcMain.handle('fileExists', () => {
   return fs.existsSync(filePath);
 });
@@ -104,25 +104,38 @@ ipcMain.on('writeFileSettings', async (event, fileData)=> {
 // permet de créer le profil de l'user à son premier lancement de l'app
 ipcMain.on('addUser', (event, userData) => {
   const { user_pseudo } = userData;
-  console.log("addUser le main process:", user_pseudo);
   if (user_pseudo != undefined) {
     bdd.addUser(user_pseudo);
-    // if(bdd.id != null) {
-    //   fs.writeFileSync(filePath, bdd.id);
-    // }
-  } else {
-    console.log("addUser invalides reçues dans le main process");
+    bdd.getUserByPseudo(user_pseudo, (err, user) => {
+      if (!err) {
+        fs.writeFileSync(filePath, user.user_id.toString());
+      } else {
+        sendNotification('Erreur', 'Aucun utilisateur avec ce pseudo');
+      }
+  });
   }
 });
-
-ipcMain.on('getScoreById', () => { bdd.getScoreById(bdd.id) });
-
-ipcMain.on('getUserById', () => { bdd.getUserById(bdd.id) });
 
 ipcMain.on('getUsers', (event) => {
   bdd.getUsers((err, users) => {
       if (!err) {
           event.reply('users', users);
+      }
+  });
+});
+
+ipcMain.on('getUserById', (event, user_id) => {
+  bdd.getUserById(user_id, (err, user) => {
+      if (!err) {
+          event.reply('userById', user);
+      }
+  });
+});
+
+ipcMain.on('getUserByPseudo', (event, user_pseudo) => {
+  bdd.getUserByPseudo(user_pseudo, (err, user) => {
+      if (!err) {
+          event.reply('userByPseudo', user);
       }
   });
 });
@@ -133,4 +146,20 @@ ipcMain.on('addScore', (event, scoreData) => {
   if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
     bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
   }
+});
+
+ipcMain.on('getScores', (event) => {
+  bdd.getScores((err, scores) => {
+      if (!err) {
+          event.reply('scores', scores);
+      }
+  });
+});
+
+ipcMain.on('getScoreById', (event, score_user_id) => {
+  bdd.getScoreById(score_user_id, (err, scoresById) => {
+      if (!err) {
+          event.reply('scoresById', scoresById);
+      }
+  });
 });

@@ -1,3 +1,8 @@
+let userCoData = {
+    user_id: 0,
+    user_pseudo: "",
+    user_createtime: ""
+}
 let userData = {
     user_pseudo: "",
     user_name: "",
@@ -124,7 +129,7 @@ function menu() {
             } else if(button.id == "2") {
                 state = 2;
             }
-            if(state == "0") {
+            if(state == 0) {
                 // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier & création de son "profil"
                 // if (path.fileExists()) {
                 //     console.log('✅');
@@ -138,49 +143,51 @@ function menu() {
                     if (exists) {
                         console.log('✅');
                         return path.readFile();
-                    } else {
-                        // if(buttonSound.getAttribute('data-sound') == 'on') {
-                        //     buttonSound.setAttribute('data-sound', 'off');
-                        //     event.target.style.backgroundColor = "";
-                        // } else {
-                        //     buttonSound.setAttribute('data-sound', 'on');
-                        //     backgroundColorRed;
-                        // }
-                        // event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                        // // + gérer l'état du son (mute/unmute)
-                        // return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                    } else {							 		
+                        return modalFirstStart();
                     }
                 }).then(content => {
                     if (content) {
-                        // if(buttonSound.getAttribute('data-sound') == 'on') {
-                        //     buttonSound.setAttribute('data-sound', 'off');
-                        //     event.target.style.backgroundColor = "";
-                        // } else {
-                        //     buttonSound.setAttribute('data-sound', 'on');
-                        //     backgroundColorRed;
-                        // }
-                        // event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                        // // + gérer l'état du son (mute/unmute) off = 1 / on = 0
-                        // return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                        db.ipcRenderer.send('getUserById', parseInt(content));
+                        db.ipcRenderer.once('userById', (err, user) => {
+                            // if (!err) {
+                                console.log('✅');
+                                userCoData = {
+                                    user_id: user.user_id,
+                                    user_pseudo: user.user_pseudo,
+                                    user_createtime: user.user_createtime
+                                }
+                                state = 3;
+                                menuGame();
+                            // } else {
+                            //     notifData = { title: 'Erreur', content: 'Utilisateur non trouvé'};
+                            //     console.log(user);
+                            //     db.ipcRenderer.send('sendNotification', notifData);
+                            //     state = 0;
+                            //     menu();
+                            // }
+                        });
                     } else {
                         return console.log('📝');
                     }
                 }).catch(console.error);
-            } else if(state == "1") {
+            } else if(state == 1) {
                 menuOptions(0);
-            } else if(state == "2") {
+            } else if(state == 2) {
                 system.end();
+            } else if(state == 3) {
+                menuGame();
             }
         }); 
     });
 }
 
-function menuOptions(state) {
-    if(state == 0) {
+function menuOptions(settingState) { // à finir (mute/unmute) + afficher l'état actuel des options (l.190 & l.255)
+    if(settingState == 0) {
         menuBalise.innerHTML = `
             <div id="optionsStart">
                 <h2>Options</h2><br><br>
-                <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
+                <button id="buttonSound" data-sound="on" class="buttonOptions">Son: ON</button>
                 <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
             </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
         document.querySelectorAll('.buttonOptions').forEach(button => {
@@ -200,42 +207,52 @@ function menuOptions(state) {
                         } else {
                             if(buttonSound.getAttribute('data-sound') == 'on') {
                                 buttonSound.setAttribute('data-sound', 'off');
-                                event.target.style.backgroundColor = "";
+                                backgroundColorRed;
                             } else {
                                 buttonSound.setAttribute('data-sound', 'on');
-                                backgroundColorRed;
+                                event.target.style.backgroundColor = "";
                             }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                            // + gérer l'état du son (mute/unmute)
-                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
+                            // if(buttonSound.getAttribute('data-sound') == 'off') {
+                                // return ;
+                            // } else {
+                                // return ;
+                            // }
                         }
                     }).then(content => {
                         if (content) {
                             if(buttonSound.getAttribute('data-sound') == 'on') {
                                 buttonSound.setAttribute('data-sound', 'off');
-                                event.target.style.backgroundColor = "";
+                                backgroundColorRed;
                             } else {
                                 buttonSound.setAttribute('data-sound', 'on');
-                                backgroundColorRed;
+                                event.target.style.backgroundColor = "";
                             }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0
-                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '0' : '1');
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
+                            // if(buttonSound.getAttribute('data-sound') == 'off') {
+                                // return ;
+                            // } else {
+                                // return ;
+                            // }
                         } else {
                             return console.log('📝');
                         }
                     }).catch(console.error);
                 } 
                 else if (event.target.id == "buttonLore") {
-                    menuOptions(state == 0 ? 1 : 0);
+                    menuOptions(settingState == 0 ? 1 : 0);
                 }  
             });
         });
-    } else if(state == 1) {
+    } else if(settingState == 1) {
         menuBalise.innerHTML = `
             <div id="optionsStart">
                 <h2>Options</h2><br><br>
-                <button id="buttonSound" data-sound="off" class="buttonOptions">Son: ON</button>
+                <button id="buttonSound" data-sound="on" class="buttonOptions">Son: ON</button>
                 <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
                 <div id="loreContent">
                     <span><b>Touches</b></span>
@@ -256,7 +273,7 @@ function menuOptions(state) {
                             - ECHAP
                     </ul>
                     <span><b>Lore</b></span>
-                        <span>Vous voilà dans un unviers...</span>
+                        <span>Vous voilà dans un univers...</span>
                 </div>
             </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
         document.querySelectorAll('.buttonOptions').forEach(button => {
@@ -267,9 +284,7 @@ function menuOptions(state) {
                 } 
                 else if (event.target.id == "buttonSound") {
                     const buttonSound = event.target;
-                    const backgroundColorDefault = event.target.style.backgroundColor = "";
                     const backgroundColorRed = event.target.style.backgroundColor = "red";
-                    // gérer l'état du son (mute/unmute) off = 1 / on = 0
                     // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
                     path.fileSettingsExists().then(exists => {
                         if (exists) {
@@ -278,25 +293,37 @@ function menuOptions(state) {
                         } else {
                             if(buttonSound.getAttribute('data-sound') == 'on') {
                                 buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorDefault;
+                                backgroundColorRed;
                             } else {
                                 buttonSound.setAttribute('data-sound', 'on');
-                                backgroundColorRed;
+                                event.target.style.backgroundColor = "";
                             }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') === 'off' ? '0' : '1');
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
+                            // if(buttonSound.getAttribute('data-sound') == 'off') {
+                                // return ;
+                            // } else {
+                                // return ;
+                            // }
                         }
                     }).then(content => {
                         if (content) {
                             if(buttonSound.getAttribute('data-sound') == 'on') {
                                 buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorDefault;
+                                backgroundColorRed;
                             } else {
                                 buttonSound.setAttribute('data-sound', 'on');
-                                backgroundColorRed;
+                                event.target.style.backgroundColor = "";
                             }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'ON' : 'OFF'}`;
-                            return path.writeFileSettings(buttonSound.getAttribute('data-sound') === 'off' ? '0' : '1');
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
+                            // if(buttonSound.getAttribute('data-sound') == 'off') {
+                                // return ;
+                            // } else {
+                                // return ;
+                            // }
                         } else {
                             return console.log('📝');
                         }
@@ -308,6 +335,14 @@ function menuOptions(state) {
             });
         });
     }
+}
+
+function menuGame() {
+    menuBalise.innerHTML = `
+        <div id="optionsStart">
+            <h2>BIENVENUE</h2><br><br>
+            <p>Pierre Chartier, X2007, head of trading hybdride & vol</p>
+        </div>`;
 }
 
 function modalFirstStart() { // problème pour relancer la modale si champ vide ou pseudo déjà utilisé
@@ -326,23 +361,20 @@ function modalFirstStart() { // problème pour relancer la modale si champ vide 
                 if (pseudo == "") {
                     modalContent.innerHTML += `</br></br><span>Le champ ne doit pas être vide</span>`;
                     pseudo = "";
-                    // closeModalFunction();
                     modalFirstStart();
-                    // return false;
                 } else if (users.some(user => user.user_pseudo == pseudo)) {
                     modalContent.innerHTML += `</br></br><span>Pseudo déjà utilisé</span>`;
                     pseudo = "";
-                    // closeModalFunction();
                     modalFirstStart();
-                    // return false;
                 } else {
                     closeModalFunction();
                     userData = { user_pseudo: pseudo, user_name: "" , user_bestcore: 0, user_count_death: 0, user_last_game: ""};
-                    db.ipcRenderer.send('addUser', userData);
+                    db.ipcRenderer.send('addUser', userData)
                     notifData = { title: "Premier lancement", content: 'Bienvenue ' + pseudo + ' !'};
                     db.ipcRenderer.send('sendNotification', notifData);
-                    sendNotification('Premier lancement', 'Bienvenue ' + pseudo + ' !');
-                    // return true;
+                    state = 3;
+                    menu();
+                    
                 }
             });
         });

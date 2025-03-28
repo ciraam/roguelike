@@ -33,9 +33,6 @@ function addScore(score_user_id, score_level_player, score_level_stage, score_ki
         if (err) {
             console.log('Erreur lors de l\'insertion du score:', err);
             sendNotification('Erreur lors de l\'insertion du score', `${err.code}: ${err.message}`);
-        } else {
-            // console.log('Score ajouté avec succès!');
-            // sendNotification('Score ajouté !', results);
         }
     });
 }
@@ -48,6 +45,36 @@ function getScoreById(score_user_id) {
         } else {
             console.log('Scores récupérés:', results);
             sendNotification('renvoie score', results);
+            return results;
+        }
+    });
+}
+
+function getScoreById(score_user_id, callback) {
+    const query = `SELECT * FROM score WHERE score_user_id = ?`;
+    db.query(query, [score_user_id], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la récupération des scores de l\'user:', err);
+            callback(err, null);
+        } else {
+            if (results.length > 0) {
+                const score = results[0];
+                callback(null, score);
+            } else {
+                callback(null, null);
+            }
+        }
+    });
+}
+
+function getScores(callback) {
+    const query = `SELECT * FROM score`;
+    db.query(query, (err, results) => {
+        if (err) {
+            console.log('Erreur lors de la récupération des scores:', err);
+            callback(err, null);
+        } else {
+            callback(null, results);
         }
     });
 }
@@ -58,23 +85,72 @@ function addUser(user_pseudo) {
         if (err) {
             console.log('Erreur lors de l\'insertion de l\'user:', err);
             sendNotification('Erreur lors de l\'insertion de l\'user:', `${err.code}: ${err.message}`);
-        } else {
-            // console.log('User ajouté avec succès!');
-            // sendNotification('User ajouté !', results);
-            getUserById(results.insertId);
         }
     });
 }
 
-function getUserById(user_id) {
+// function getUserById(user_id) {
+//     const query = `SELECT * FROM user WHERE user_id = ?`;
+//     db.query(query, [user_id], (err, results) => {
+//         if (err) {
+//             console.log('Erreur lors de la récupération de l\'user:', err);
+//         } else {
+//             // console.log('User récupéré:', results);
+//             // sendNotification('renvoie user', results);
+//             id = results.user_id.toString();
+//             // return results;
+//         }
+//     });
+// }
+
+function getUserById(user_id, callback) {
     const query = `SELECT * FROM user WHERE user_id = ?`;
     db.query(query, [user_id], (err, results) => {
         if (err) {
-            console.log('Erreur lors de la récupération de l\'user:', err);
+            console.error('Erreur lors de la récupération de l\'user:', err);
+            callback(err, null);
         } else {
-            // console.log('User récupéré:', results);
-            // sendNotification('renvoie user', results);
-            id = parseInt(results.user_id);
+            if (results.length > 0) {
+                const user = results[0];
+                callback(null, user);
+            } else {
+                callback(null, null);
+            }
+        }
+    });
+}
+
+// function getUserByPseudo(user_pseudo) {
+//     const query = `SELECT * FROM user WHERE user_pseudo = ?`;
+//     db.query(query, [user_pseudo], (err, results) => {
+//         if (err) {
+//             console.log('Erreur lors de la récupération de l\'user:', err);
+//         } else {
+//             // console.log('User récupéré:', results);
+//             // sendNotification('renvoie user id', results.user_id);
+//             id = results.user_id;
+//             // if(id != null) {
+//                 sendNotification('bdd id', results[0]);
+//             // }
+//             // return results;
+            
+//         }
+//     });
+// }
+
+function getUserByPseudo(user_pseudo, callback) {
+    const query = `SELECT * FROM user WHERE user_pseudo = ?`;
+    db.query(query, [user_pseudo], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la récupération de l\'user:', err);
+            callback(err, null);
+        } else {
+            if (results.length > 0) {
+                const user = results[0];
+                callback(null, user);
+            } else {
+                callback(null, null);
+            }
         }
     });
 }
@@ -86,8 +162,6 @@ function getUsers(callback) {
             console.log('Erreur lors de la récupération des users:', err);
             callback(err, null);
         } else {
-            // console.log('Users récupérés:', results);
-            // sendNotification('renvoie users', results);
             callback(null, results);
         }
     });
@@ -96,9 +170,11 @@ function getUsers(callback) {
 // pour utiliser dans le main & le renderer principalement
 module.exports = {
     addScore,
+    getScores,
     getScoreById,
     addUser,
     getUsers,
     getUserById,
+    getUserByPseudo,
     dbEnd
 };
