@@ -118,7 +118,10 @@ function menu() {
             <button id="0" class="buttonStart">Jouer</button>
             <button id="1" class="buttonStart">Options</button>
             <button id="2" class="buttonStart">Quitter</button>
-        </div>`;
+        </div>
+        <footer class="game-footer">
+            <p>© 2025 ciraam dev</p>
+        </footer>`;
     const buttonStart = document.querySelectorAll('.buttonStart');
     buttonStart.forEach(button => {
         button.addEventListener('click', () => {
@@ -168,7 +171,7 @@ function menu() {
             } else if(state == 2) {
                 system.end();
             } else if(state == 3) {
-                menuGame();
+                menuGame(1);
             }
         }); 
     });
@@ -329,54 +332,73 @@ function menuOptions(settingState) { // à finir (mute/unmute) + afficher l'éta
     }
 }
 
-function menuGame() {
+function menuGame(state) {
     menuBalise.innerHTML = `
-        <div class="game-container">
-            <span class="game-header">
-                <h2>Bienvenue</h2>
-            </span>
-            
-            <nav class="main-menu">
-                <div class="menu-item play" id="play-btn">
-                    <div class="menu-icon">▶</div>
-                    <div class="menu-text">Jouer</div>
-                </div>
-                
-                <div class="menu-item rankings" id="rankings-btn">
-                    <div class="menu-icon">🏆</div>
-                    <div class="menu-text">Classement</div>
-                </div>
-                
-                <div class="menu-item profile" id="profile-btn">
-                    <div class="menu-icon">👤</div>
-                    <div class="menu-text">Profil</div>
-                </div>
-                
-                <div class="menu-item settings" id="settings-btn">
-                    <div class="menu-icon">⚙️</div>
-                    <div class="menu-text">Options</div>
-                </div>
-            </nav>
-            
-            <footer class="game-footer">
-                <p>© 2023 ciraam dev</p>
-            </footer>
-        </div>`;
-    const playBtn = document.getElementById('play-btn');
-    const rankingsBtn = document.getElementById('rankings-btn');
-    const profileBtn = document.getElementById('profile-btn');
-    const settingsBtn = document.getElementById('settings-btn');
-    playBtn.addEventListener('click', function() {
-        // Redirection vers l'écran de jeu
-    });
-    rankingsBtn.addEventListener('click', function() {
-        // Redirection vers le classement
-    });
-    profileBtn.addEventListener('click', function() {
-        // Redirection vers le profil
-    });       
-    settingsBtn.addEventListener('click', function() {
-        // Redirection vers les options
+        <span class="game-header">
+            <h2>${userCoData.user_pseudo}'s travel</h2>
+            <div class="menu-item profile" id="profile-btn">
+                <div title="Profil de ${userCoData.user_pseudo}" class="menu-icon">👤</div>
+            </div>
+            <div class="menu-item menu" id="menu-btn">
+                <div title="Retour menu principal" class="menu-icon">↩️</div>
+            </div>
+        </span>`;
+
+    if(state == 1) {
+        menuBalise.innerHTML += `
+            <div class="menu-game" id="menu-game">
+                <div>Start</div>
+            </div>`;
+    } else if(state == 2) {
+        menuBalise.innerHTML += `
+            <div class="menu-ranking" id="menu-ranking">
+                <div>Classment général</div>
+                <div>Classment personnel</div>
+            </div>`;
+    } else if(state == 3) {
+        menuOptions(0);
+    } else if (state == 4) {
+        menuBalise.innerHTML += `
+            <div class="menu-profile" id="menu-profile">
+                <div>Profil</div>
+            </div>`;
+    } else if(state == 0) {
+        menu();
+    }
+    menuBalise.innerHTML += `
+        <nav class="main-menu">
+            <div class="menu-item rankings" id="rankings-btn">
+                <div ${state == 2 ? `style="background: rgba(240, 180, 40, 0.8);"` : `` } title="Classement général & personnel" class="menu-icon">🏆</div>
+            </div>
+            <div class="menu-item play" id="play-btn">
+                <div ${state == 1 ? `style="background: rgba(40, 180, 40, 0.8);"` : `` } title="Lancer une partie" class="menu-icon">▶</div>
+            </div>
+            <div class="menu-item settings" id="settings-btn">
+                <div ${state == 3 ? `style="background: rgba(140, 40, 240, 0.8);"` : `` } title="Options" class="menu-icon">⚙️</div>
+            </div>
+        </nav>`;
+    document.querySelectorAll('.menu-item').forEach((elements) => {
+        elements.addEventListener('click', function() {
+            if(elements.id == 'play-btn') {
+                if(state != 1) {
+                    menuGame(1);
+                }
+            } else if(elements.id == 'rankings-btn') {
+                if(state != 2) {
+                    menuGame(2);
+                }
+            } else if(elements.id == 'settings-btn') {
+                if(state != 3) {
+                    menuGame(3);
+                }
+            } else if(elements.id == 'profile-btn') {
+                if(state != 4) {
+                    menuGame(4);
+                }
+            } else if(elements.id == 'menu-btn') {
+                menuGame(0);
+            }
+        });
     });
 
 }
