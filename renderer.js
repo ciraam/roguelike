@@ -381,22 +381,22 @@ function menuGame(state) {
         elements.addEventListener('click', function() {
             if(elements.id == 'play-btn') {
                 if(state != 1) {
-                    menuGame(1);
+                    menuGame(state = 1);
                 }
             } else if(elements.id == 'rankings-btn') {
                 if(state != 2) {
-                    menuGame(2);
+                    menuGame(state = 2);
                 }
             } else if(elements.id == 'settings-btn') {
                 if(state != 3) {
-                    menuGame(3);
+                    menuGame(state = 3);
                 }
             } else if(elements.id == 'profile-btn') {
                 if(state != 4) {
-                    menuGame(4);
+                    menuGame(state = 4);
                 }
             } else if(elements.id == 'menu-btn') {
-                menuGame(0);
+                menuGame(state = 0);
             }
         });
     });
