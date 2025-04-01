@@ -1,11 +1,13 @@
-const { app, Notification } = require('electron');
+const { app,  Notification } = require('electron');
+const path = require('node:path');
+const icon = path.join(__dirname, 'img/icon.ico');
 const mysql = require('mysql2');
-let id = null;
+// let id = null;
+
+app.name = "roguelike project";
 
 function sendNotification(title, content) {
-    app.whenReady().then(() => {
-        new Notification({ title: title, body: content }).show();
-    }); 
+    new Notification({ title: title, body: content, icon: icon, silent: true }).show();
 }
 
 const db = mysql.createConnection({
@@ -78,6 +80,24 @@ function getScores(callback) {
         }
     });
 }
+
+function getLastGame(user_id, user_last_game, callback) {
+    const query = `SELECT * FROM score WHERE score_user_id = ? & score_createtime = ?`;
+    db.query(query, [user_id, user_last_game], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la récupération de l\'user:', err);
+            callback(err, null);
+        } else {
+            if (results.length > 0) {
+                const user = results[0];
+                callback(null, user);
+            } else {
+                callback(null, null);
+            }
+        }
+    });
+}
+
 
 function addUser(user_pseudo) {
     const query = `INSERT INTO user (user_pseudo) VALUES (?)`;
@@ -172,6 +192,7 @@ module.exports = {
     addScore,
     getScores,
     getScoreById,
+    getLastGame,
     addUser,
     getUsers,
     getUserById,

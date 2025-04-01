@@ -1,12 +1,18 @@
-const { app, BrowserWindow, ipcMain,  Menu, MenuItem, Notification  } = require('electron/main');
+const { app, BrowserWindow, ipcMain, Notification  } = require('electron/main');
 const path = require('node:path');
 const fs = require('fs');
 const bdd = require('./database.js');
+const icon = path.join(__dirname, 'img/icon.ico');
+let win;
+let inGame = false;
+let isPause;
 
 app.disableHardwareAcceleration();
+app.name = "roguelike project";
 
 const createWindow = () => {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
+    icon: icon,
     width: 600,
     height: 700,
     titleBarStyle: 'hidden',
@@ -19,25 +25,13 @@ const createWindow = () => {
   win.resizable = false;
   win.setBackgroundColor('rgba(61, 61, 61, 0.5)');
   win.loadFile('index.html');
-  // win.webContents.openDevTools();
+  win.webContents.openDevTools();
 }
 
 // envoyer une notification bureau
 function sendNotification(title, content) {
-  new Notification({ title: title, body: content }).show();
+  new Notification({ title: title, body: content, icon: icon, silent: true }).show();
 }
-
-// pour tester les notifs et l'input clavier
-// const menu = new Menu();
-// menu.append(new MenuItem({
-//   label: 'Roguelike',
-//   submenu: [{
-//     role: 'help',
-//     accelerator: process.platform === 'darwin' ? 'Space+Cmd' : 'Space+Shift',
-//     click: () => { sendNotification('test input & notif', 'azertyuiopqsdfghjklmwxcvbn'); }
-//   }]
-// }));
-// Menu.setApplicationMenu(menu);
 
 app.whenReady().then(() => {
   ipcMain.handle('ping', () => 'pong');
@@ -53,9 +47,16 @@ app.whenReady().then(() => {
 // pour Windows & Linux
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
-  mainWindow = null;
-  id = null;
+  // id = null;
   bdd.dbEnd();
+});
+
+ipcMain.on('inGame', (event, gameState) => {
+  inGame = gameState;
+});
+
+ipcMain.on('pause', (event, pauseState) => {
+    isPause = pauseState;
 });
 
 ipcMain.on('sendNotification', (event, notifData) => {
@@ -69,8 +70,7 @@ ipcMain.on('restart', () => {
 });
 
 ipcMain.on('end', () => {
-  mainWindow = null;
-  id = null;
+  // id = null;
   app.quit();
   bdd.dbEnd();
 });
@@ -116,27 +116,36 @@ ipcMain.on('addUser', (event, userData) => {
   }
 });
 
+ipcMain.on('getLastGame', (event, userData) => {
+  const { user_id, user_last_game } = userData;
+  bdd.getLastGame(user_id, user_last_game, (err, score) => {
+    if (!err) {
+      event.reply('lastGame', score);
+    }
+  });
+});
+
 ipcMain.on('getUsers', (event) => {
   bdd.getUsers((err, users) => {
-      if (!err) {
-          event.reply('users', users);
-      }
+    if (!err) {
+      event.reply('users', users);
+    }
   });
 });
 
 ipcMain.on('getUserById', (event, user_id) => {
   bdd.getUserById(user_id, (err, user) => {
-      if (!err) {
-          event.reply('userById', user);
-      }
+    if (!err) {
+      event.reply('userById', user);
+    }
   });
 });
 
 ipcMain.on('getUserByPseudo', (event, user_pseudo) => {
   bdd.getUserByPseudo(user_pseudo, (err, user) => {
-      if (!err) {
-          event.reply('userByPseudo', user);
-      }
+    if (!err) {
+      event.reply('userByPseudo', user);
+    }
   });
 });
 
@@ -150,16 +159,16 @@ ipcMain.on('addScore', (event, scoreData) => {
 
 ipcMain.on('getScores', (event) => {
   bdd.getScores((err, scores) => {
-      if (!err) {
-          event.reply('scores', scores);
-      }
+    if (!err) {
+      event.reply('scores', scores);
+    }
   });
 });
 
 ipcMain.on('getScoreById', (event, score_user_id) => {
   bdd.getScoreById(score_user_id, (err, scoresById) => {
-      if (!err) {
-          event.reply('scoresById', scoresById);
-      }
+    if (!err) {
+      event.reply('scoresById', scoresById);
+    }
   });
 });

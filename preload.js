@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('db', {
   }
 });
 contextBridge.exposeInMainWorld('system', {
+  inGame: (gameState) => ipcRenderer.send('inGame', gameState),
+  pause: (pauseState) => ipcRenderer.send('pause', pauseState),
   restart: () => ipcRenderer.send('restart'),
   end: () => ipcRenderer.send('end')
 });

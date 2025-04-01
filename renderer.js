@@ -4,16 +4,24 @@ let userCoData = {
     user_createtime: ""
 }
 let userData = {
-    user_pseudo: "",
+    user_id: 0,
     user_name: "",
-    user_bestcore: 0,
+    user_bestscore: 0,
     user_count_death: 0,
     user_last_game: ""
 };
 let scoreData = {
-    score_user_id: 1,
-    score_level_player: 1,
-    score_level_stage: 1,
+    score_user_id: null,
+    score_level_player: null,
+    score_level_stage: null,
+    score_kill: 0,
+    score_time: '',
+    score_createtime: ''
+};
+let scoreLastGameData = {
+    score_user_id: null,
+    score_level_player: null,
+    score_level_stage: null,
     score_kill: 0,
     score_time: ''
 };
@@ -86,6 +94,15 @@ function updateTime(timestamp) {
 }
 requestAnimationFrame(updateTime);
 
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}-${month}-${year}`;
+}
+
 // permet de gérer une modale
 const modal = document.getElementById('modal');
 const closeModal = document.getElementById('closeModal');
@@ -104,14 +121,55 @@ window.onclick = function(event) {
     }
 }
 
-// permet de gérer le contenu de l'app
-state = null;
+// permet de gérer un temps de chargement (surtout pour les requêtes à la bdd)
+function showLoader() {
+    const loader = document.getElementById('loading-overlay');
+    loader.classList.remove('loading-hidden');
+}
+function hideLoader() {
+const loader = document.getElementById('loading-overlay');
+loader.classList.add('loading-hidden');
+}
+
+// côté son // 
+function muteUnmute(type) {
+    const allAudio = document.querySelectorAll("audio");
+    allAudio.forEach(audio => {
+        type == 1 ? audio.muted = true : audio.muted = false;
+    });
+}
+const menuStartMusic = document.getElementById('menuStartMusic');
+const menuGameMusic = document.getElementById('menuGameMusic');
+// côté son //
+
+// côté état //
+let state = null;
+let menuGameState = null;
+let soundState;
+let isPause = false;
+let inGame;
+path.fileSettingsExists().then(exists => {
+    if (exists) {
+        console.log('✅');
+        return path.readFileSettings();
+    }
+}).then(content => {
+    if (content) {
+        soundState = content;
+        muteUnmute(content);
+    }
+}).catch(console.error);
+// côté état //
+
 const menuBalise = document.getElementById('menu');
 if(menuBalise) {
     menu();
 }
 
 function menu() {
+    system.inGame(inGame = false);
+    menuStartMusic.volume = 0.15;
+    menuStartMusic.play();
     menuBalise.innerHTML = `
         <h2 id="titleStart">Bienvenue sur Roguelike (nom à changer) ! 👋</h2>
         <div id="menuStart">
@@ -145,262 +203,28 @@ function menu() {
                     if (content) {
                         db.ipcRenderer.send('getUserById', parseInt(content));
                         db.ipcRenderer.once('userById', (err, user) => {
-                            // if (!err) {
-                                console.log('✅');
-                                userCoData = {
-                                    user_id: user.user_id,
-                                    user_pseudo: user.user_pseudo,
-                                    user_createtime: user.user_createtime
-                                }
-                                state = 3;
-                                menuGame();
-                            // } else {
-                            //     notifData = { title: 'Erreur', content: 'Utilisateur non trouvé'};
-                            //     console.log(user);
-                            //     db.ipcRenderer.send('sendNotification', notifData);
-                            //     state = 0;
-                            //     menu();
-                            // }
+                            console.log('✅');
+                            userCoData = {
+                                user_id: user.user_id,
+                                user_pseudo: user.user_pseudo,
+                                user_createtime: user.user_createtime
+                            }
+                            state = null;
+                            menuGame(menuGameState = 1);
+                            menuStartMusic.pause();
+                            menuStartMusic.currentTime = 0;
                         });
                     } else {
                         return console.log('📝');
                     }
                 }).catch(console.error);
             } else if(state == 1) {
-                menuOptions(0);
+                menuOptions(0, 0);
             } else if(state == 2) {
                 system.end();
-            } else if(state == 3) {
-                menuGame(1);
             }
         }); 
     });
-}
-
-function menuOptions(settingState) { // à finir (mute/unmute) + afficher l'état actuel des options (l.190 & l.255)
-    if(settingState == 0) {
-        menuBalise.innerHTML = `
-            <div id="optionsStart">
-                <h2>Options</h2><br><br>
-                <button id="buttonSound" data-sound="on" class="buttonOptions">Son: ON</button>
-                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
-            </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
-        document.querySelectorAll('.buttonOptions').forEach(button => {
-            button.addEventListener('click', (event) => { 
-                if (event.target.id == "menuBack") {
-                    state = 0; 
-                    menu(); 
-                } 
-                else if (event.target.id == "buttonSound") {
-                    const buttonSound = event.target;
-                    const backgroundColorRed = event.target.style.backgroundColor = "red";
-                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
-                    path.fileSettingsExists().then(exists => {
-                        if (exists) {
-                            console.log('✅');
-                            return path.readFileSettings();
-                        } else {
-                            if(buttonSound.getAttribute('data-sound') == 'on') {
-                                buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorRed;
-                            } else {
-                                buttonSound.setAttribute('data-sound', 'on');
-                                event.target.style.backgroundColor = "";
-                            }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
-                            // if(buttonSound.getAttribute('data-sound') == 'off') {
-                                // return ;
-                            // } else {
-                                // return ;
-                            // }
-                        }
-                    }).then(content => {
-                        if (content) {
-                            if(buttonSound.getAttribute('data-sound') == 'on') {
-                                buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorRed;
-                            } else {
-                                buttonSound.setAttribute('data-sound', 'on');
-                                event.target.style.backgroundColor = "";
-                            }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
-                            // if(buttonSound.getAttribute('data-sound') == 'off') {
-                                // return ;
-                            // } else {
-                                // return ;
-                            // }
-                        } else {
-                            return console.log('📝');
-                        }
-                    }).catch(console.error);
-                } 
-                else if (event.target.id == "buttonLore") {
-                    menuOptions(settingState == 0 ? 1 : 0);
-                }  
-            });
-        });
-    } else if(settingState == 1) {
-        menuBalise.innerHTML = `
-            <div id="optionsStart">
-                <h2>Options</h2><br><br>
-                <button id="buttonSound" data-sound="on" class="buttonOptions">Son: ON</button>
-                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
-                <div id="loreContent">
-                    <span><b>Touches</b></span>
-                    <ul>
-                        <li><u>Déplacement</u></li>
-                            - En haut : Z </br>
-                            - À droite : D </br>
-                            - À gauche : Q </br>
-                            - En bas : S </br>
-                        <li><u>Tirer</u></li>
-                            - Barre espace (Spacebar) </br>
-                        <li><u>Viser</u></li>
-                            - En haut : UP</br>
-                            - À droite : RIGHT</br>
-                            - À gauche : LEFT</br>
-                            - En bas : BOTTOM</br>
-                        <li><u>Mettre en pause</u></li>
-                            - ECHAP
-                    </ul>
-                    <span><b>Lore</b></span>
-                        <span>Vous voilà dans un univers...</span>
-                </div>
-            </div><br><br><span id="menuBack" class="buttonOptions">←</span>`;
-        document.querySelectorAll('.buttonOptions').forEach(button => {
-            button.addEventListener('click', (event) => { 
-                if (event.target.id == "menuBack") {
-                    state = 0; 
-                    menu(); 
-                } 
-                else if (event.target.id == "buttonSound") {
-                    const buttonSound = event.target;
-                    const backgroundColorRed = event.target.style.backgroundColor = "red";
-                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
-                    path.fileSettingsExists().then(exists => {
-                        if (exists) {
-                            console.log('✅');
-                            return path.readFileSettings();
-                        } else {
-                            if(buttonSound.getAttribute('data-sound') == 'on') {
-                                buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorRed;
-                            } else {
-                                buttonSound.setAttribute('data-sound', 'on');
-                                event.target.style.backgroundColor = "";
-                            }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
-                            // if(buttonSound.getAttribute('data-sound') == 'off') {
-                                // return ;
-                            // } else {
-                                // return ;
-                            // }
-                        }
-                    }).then(content => {
-                        if (content) {
-                            if(buttonSound.getAttribute('data-sound') == 'on') {
-                                buttonSound.setAttribute('data-sound', 'off');
-                                backgroundColorRed;
-                            } else {
-                                buttonSound.setAttribute('data-sound', 'on');
-                                event.target.style.backgroundColor = "";
-                            }
-                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                            // + gérer l'état du son (mute/unmute) off = 1 / on = 0 à finir
-                            // if(buttonSound.getAttribute('data-sound') == 'off') {
-                                // return ;
-                            // } else {
-                                // return ;
-                            // }
-                        } else {
-                            return console.log('📝');
-                        }
-                    }).catch(console.error);
-                } 
-                else if (event.target.id == "buttonLore") {
-                    menuOptions(state == 0 ? 1 : 0);
-                }  
-            });
-        });
-    }
-}
-
-function menuGame(state) {
-    menuBalise.innerHTML = `
-        <span class="game-header">
-            <h2>${userCoData.user_pseudo}'s travel</h2>
-            <div class="menu-item profile" id="profile-btn">
-                <div title="Profil de ${userCoData.user_pseudo}" class="menu-icon">👤</div>
-            </div>
-            <div class="menu-item menu" id="menu-btn">
-                <div title="Retour menu principal" class="menu-icon">↩️</div>
-            </div>
-        </span>`;
-
-    if(state == 1) {
-        menuBalise.innerHTML += `
-            <div class="menu-game" id="menu-game">
-                <div>Start</div>
-            </div>`;
-    } else if(state == 2) {
-        menuBalise.innerHTML += `
-            <div class="menu-ranking" id="menu-ranking">
-                <div>Classment général</div>
-                <div>Classment personnel</div>
-            </div>`;
-    } else if(state == 3) {
-        menuOptions(0);
-    } else if (state == 4) {
-        menuBalise.innerHTML += `
-            <div class="menu-profile" id="menu-profile">
-                <div>Profil</div>
-            </div>`;
-    } else if(state == 0) {
-        menu();
-    }
-    menuBalise.innerHTML += `
-        <nav class="main-menu">
-            <div class="menu-item rankings" id="rankings-btn">
-                <div ${state == 2 ? `style="background: rgba(240, 180, 40, 0.8);"` : `` } title="Classement général & personnel" class="menu-icon">🏆</div>
-            </div>
-            <div class="menu-item play" id="play-btn">
-                <div ${state == 1 ? `style="background: rgba(40, 180, 40, 0.8);"` : `` } title="Lancer une partie" class="menu-icon">▶</div>
-            </div>
-            <div class="menu-item settings" id="settings-btn">
-                <div ${state == 3 ? `style="background: rgba(140, 40, 240, 0.8);"` : `` } title="Options" class="menu-icon">⚙️</div>
-            </div>
-        </nav>`;
-    document.querySelectorAll('.menu-item').forEach((elements) => {
-        elements.addEventListener('click', function() {
-            if(elements.id == 'play-btn') {
-                if(state != 1) {
-                    menuGame(state = 1);
-                }
-            } else if(elements.id == 'rankings-btn') {
-                if(state != 2) {
-                    menuGame(state = 2);
-                }
-            } else if(elements.id == 'settings-btn') {
-                if(state != 3) {
-                    menuGame(state = 3);
-                }
-            } else if(elements.id == 'profile-btn') {
-                if(state != 4) {
-                    menuGame(state = 4);
-                }
-            } else if(elements.id == 'menu-btn') {
-                menuGame(state = 0);
-            }
-        });
-    });
-
 }
 
 function modalFirstStart() { // problème pour relancer la modale si champ vide ou pseudo déjà utilisé
@@ -430,11 +254,336 @@ function modalFirstStart() { // problème pour relancer la modale si champ vide 
                     db.ipcRenderer.send('addUser', userData)
                     notifData = { title: "Premier lancement", content: 'Bienvenue ' + pseudo + ' !'};
                     db.ipcRenderer.send('sendNotification', notifData);
-                    state = 3;
+                    state = 0;
                     menu();
-                    
                 }
             });
         });
     }
+}
+
+function menuOptions(settingState, currMenu) {
+    if(settingState == 0) {
+        menuBalise.innerHTML = `
+            ${currMenu == 0 ? `</br></br></br></br></br></br>` : ``}
+            <div id="optionsStart">
+                <h2>Options</h2><br>
+                <button id="buttonSound" ${soundState == 0 ? `data-sound="on" class="buttonOptions">Son: ON` : `data-sound="off" class="buttonOptions sound-off">Son: OFF`}</button>
+                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
+            </div><br><br>${currMenu == 0 || currMenu == 2 ? `<span id="menuBack" class="buttonOptions">←</span>` : ``}`;
+        document.querySelectorAll('.buttonOptions').forEach(button => {
+            button.addEventListener('click', (event) => { 
+                if (event.target.id == "menuBack") {
+                    if(currMenu == 0) {
+                        state = currMenu; 
+                        menu(); 
+                    } else if(currMenu == 1) {
+                        menuGame(menuGameState = currMenu);
+                    } else if(currMenu == 2) {
+                        game();
+                    }
+                } 
+                else if (event.target.id == "buttonSound") {
+                    const buttonSound = event.target;
+                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
+                    path.fileSettingsExists().then(exists => {
+                        if (exists) {
+                            console.log('✅');
+                            return path.readFileSettings();
+                        } else {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                buttonSound.classList.add('sound-off');
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                buttonSound.classList.remove('sound-off');
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+                            buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+                        }
+                    }).then(content => {
+                        if (content) {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                buttonSound.classList.add('sound-off');
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                buttonSound.classList.remove('sound-off');
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+                            buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+                        } else {
+                            return console.log('📝');
+                        }
+                    }).catch(console.error);
+                } 
+                else if (event.target.id == "buttonLore") {
+                    menuOptions(settingState == 0 ? 1 : 0, currMenu);
+                }  
+            });
+        });
+    } else if(settingState == 1) {
+        menuBalise.innerHTML = `
+            ${currMenu == 0 ? `</br></br></br></br></br></br>` : ``}
+            <div id="optionsStart">
+                <h2>Options</h2><br>
+                <button id="buttonSound" ${soundState == 0 ? `data-sound="on" class="buttonOptions">Son: ON` : `data-sound="off" class="buttonOptions sound-off">Son: OFF`}</button>
+                <button id="buttonLore" class="buttonOptions">Psst..psst j'ai un secret..</button>
+                <div id="loreContent">
+                    <span><b>Touches</b></span>
+                    <ul>
+                        <li><u>Déplacement</u></li>
+                            - En haut : Z </br>
+                            - À droite : D </br>
+                            - À gauche : Q </br>
+                            - En bas : S </br>
+                        <li><u>Tirer</u></li>
+                            - Barre espace (Spacebar) </br>
+                        <li><u>Viser</u></li>
+                            - En haut : UP</br>
+                            - À droite : RIGHT</br>
+                            - À gauche : LEFT</br>
+                            - En bas : BOTTOM</br>
+                        <li><u>Mettre en pause</u></li>
+                            - ECHAP
+                    </ul>
+                    <span><b>Lore</b></span>
+                        <span>Vous voilà dans un univers...</span>
+                </div>
+            </div><br><br>${currMenu == 0 || currMenu == 2 ? `<span id="menuBack" class="buttonOptions">←</span>` : ``}`;
+        document.querySelectorAll('.buttonOptions').forEach(button => {
+            button.addEventListener('click', (event) => {
+                if (event.target.id == "menuBack") {
+                    if(currMenu == 0) {
+                        state = currMenu; 
+                        menu(); 
+                    } else if(currMenu == 1) {
+                        menuGame(menuGameState = currMenu);
+                    } else if(currMenu == 2) {
+                        game();
+                    }
+                } 
+                else if (event.target.id == "buttonSound") {
+                    const buttonSound = event.target;
+                    // permet de voir s'il l'user est nouveau ou pas, si oui création d'un fichier "settings"
+                    path.fileSettingsExists().then(exists => {
+                        if (exists) {
+                            console.log('✅');
+                            return path.readFileSettings();
+                        } else {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                buttonSound.classList.add('sound-off');
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                buttonSound.classList.remove('sound-off');
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+                            buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+                        }
+                    }).then(content => {
+                        if (content) {
+                            if(buttonSound.getAttribute('data-sound') == 'on') {
+                                buttonSound.setAttribute('data-sound', 'off');
+                                buttonSound.classList.add('sound-off');
+                            } else {
+                                buttonSound.setAttribute('data-sound', 'on');
+                                buttonSound.classList.remove('sound-off');
+                            }
+                            event.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+                            path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+                            buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+                            buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+                        } else {
+                            return console.log('📝');
+                        }
+                    }).catch(console.error);
+                } 
+                else if (event.target.id == "buttonLore") {
+                    menuOptions(settingState == 0 ? 1 : 0, currMenu);
+                }  
+            });
+        });
+    }
+}
+
+function menuGame(menuGameState) {
+    system.inGame(inGame = false);
+    menuGameMusic.volume = 0.15;
+    menuGameMusic.play()
+    const header = document.getElementById('menu-header');
+    header.innerHTML = `
+        <span class="game-header">
+            <h2>${userCoData.user_pseudo}'s journey</h2>
+            <div class="menu-item menu" id="menu-btn">
+                <div title="Retour menu principal" class="menu-icon">↩️</div>
+            </div>
+            <div class="menu-item profile" id="profile-btn">
+                <div ${menuGameState == 4 ? `hidden` : `` } title="Profil de ${userCoData.user_pseudo}" class="menu-icon">👤</div>
+            </div>
+        </span>`;
+    const footer = document.getElementById('menu-footer'); // à la fin après avoir rempli le contenu des nav, ajuster l'emplacement des boutons
+    footer.innerHTML = `
+        <nav class="main-menu${menuGameState == 3 ? menuGameState + `-` + soundState : menuGameState }">
+            <div class="menu-item rankings" id="rankings-btn">
+                <div ${menuGameState == 2 ? `hidden` : `` } title="Classement général & personnel" class="menu-icon">🏆</div>
+            </div>
+            <div class="menu-item play" id="play-btn">
+                <div ${menuGameState == 1 ? `hidden` : `` } title="Lancer une partie" class="menu-icon">🎮</div>
+            </div>
+            <div class="menu-item settings" id="settings-btn">
+                <div ${menuGameState == 3 ? `hidden` : `` } title="Options" class="menu-icon">⚙️</div>
+            </div>
+        </nav>`;
+    if(menuGameState == 1) {
+        db.ipcRenderer.send('getUserById', userCoData.user_id);
+        db.ipcRenderer.once('userById', (err, user) => {
+            console.log('✅');
+            userData = {
+                user_bestscore: user.user_bestscore,
+                user_count_death: user.user_count_death,
+                user_last_game: user.user_last_game
+            }          
+        });
+        userData = { user_id: userCoData.user_id, user_last_game: userData.user_last_game };
+        let lastGameIsNull = false;
+        db.ipcRenderer.send('getLastGame', userData);
+        db.ipcRenderer.once('lastGame', (err, score) => {
+            console.log('✅');
+            scoreLastGameData = {
+                score_level_player: score.score_level_player,
+                score_level_stage: score.score_level_stage,
+                score_kill: score.score_kill,
+                score_time: score.score_time
+            };      
+        });
+        showLoader();
+        setTimeout(() => {
+            hideLoader();
+            scoreLastGameData.score_level_player == null && scoreLastGameData.score_level_stage == null ? lastGameIsNull = true : lastGameIsNull = false;
+            const nav = document.querySelector('.main-menu1');
+            lastGameIsNull ? nav.style= 'margin-top: 40%;' : nav.style= 'margin-top: 12%;';
+            menuBalise.innerHTML = `
+            <div class="menu-game" id="menu-game">
+                <div class="bestscore-countdeath-container">
+                    <div id="user-bestscore">
+                        <div class="score-menu-title">Meilleur score</div>
+                        <div class="bestscore-countdeath-score">
+                            <div class="score-menu">${userData.user_bestscore}</div>
+                        </div>
+                    </div>
+                    <div id="user-countdeath">
+                        <div class="score-menu-title">Compteur de mort</div>
+                        <div class="bestscore-countdeath-score">
+                            <div class="score-menu">${userData.user_count_death}</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="user-lastgame" ${lastGameIsNull == true ? `hidden` : ``}>
+                    <div class="score-menu-title">Dernière partie</div>
+                    <div class="score-lastgame-container">                    
+                        <div class="score-menu">Niveau atteint: ${scoreLastGameData.score_level_player}</div>
+                        <div class="score-menu">Étage atteint: ${scoreLastGameData.score_level_stage}</div>
+                        <div class="score-menu">Ennemis tués: ${scoreLastGameData.score_kill}</div>
+                        <div class="score-menu">Temps: ${scoreLastGameData.score_time}</div>
+                        <div class="score-menu">Le: ${formatDate(userData.user_last_game)}</div>
+                    </div>
+                </div>
+                <div id="user-play">
+                    <div id="user-start" title="Jouer" class="play-start">START</div>
+                </div>
+            </div>`;
+            document.querySelector('.play-start').addEventListener('click', () => {
+                game();
+            });
+        }, 100);
+    } else if(menuGameState == 2) {
+        menuBalise.innerHTML = `
+            <div class="menu-ranking" id="menu-ranking">
+                <div>Classment général</div>
+                <div>Classment personnel</div>
+            </div>`;
+    } else if(menuGameState == 3) {
+        menuOptions(0, 1);
+    } else if (menuGameState == 4) {
+        menuBalise.innerHTML = `
+            <div class="menu-profile" id="menu-profile">
+                <div>Profil</div>
+            </div>`;
+    } else if(menuGameState == 0) {
+        menuGameMusic.pause();
+        menuGameMusic.currentTime = 0;
+        state = null;
+        menu();
+    }
+    document.querySelectorAll('.menu-item').forEach((elements) => {
+        elements.addEventListener('click', function() {
+            if(elements.id == 'play-btn') {
+                menuGame(menuGameState = 1);
+            } else if(elements.id == 'rankings-btn') {
+                menuGame(menuGameState = 2);
+            } else if(elements.id == 'settings-btn') {
+                menuGame(menuGameState = 3);
+            } else if(elements.id == 'profile-btn') {
+                menuGame(menuGameState = 4);
+            } else if(elements.id == 'menu-btn') {
+                menuGame(menuGameState = 0);
+                header.innerHTML = ``;
+                footer.innerHTML = ``;
+            }
+        });
+    });
+}
+
+const container = document.getElementById('game-container');
+function game() {
+    system.inGame(inGame = true);
+    menuBalise.innerHTML = ``;
+    const header = document.getElementById('menu-header');
+    header.innerHTML = ``;
+    const footer = document.getElementById('menu-footer');
+    footer.innerHTML = ``;
+    container.hidden = false;
+    container.innerHTML = `
+        <div id="pause-overlay" hidden>
+            <h2>PAUSE</h2>
+            <button class="pause-btn" id="resume">Reprendre (Échap)</button>
+            <button class="pause-btn" id="options">Options</button>
+            <button class="pause-btn" id="back">Retour menu</button>
+        </div>`;
+    const overlay = document.getElementById('pause-overlay');
+    window.addEventListener('keydown', (e) => {
+        if (e.key == 'Escape') {
+            isPause ? isPause = false : isPause = true;
+            isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
+            system.pause(isPause);
+            // gérer la pause
+        }
+    });
+    document.querySelectorAll('.pause-btn').forEach(elements => {
+        elements.addEventListener('click', function() {
+            if(elements.id == 'resume') {
+                isPause ? isPause = false : isPause = true;
+                isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
+                system.pause(isPause);
+                // gérer la fin de pause
+            } else if(elements.id == 'options') {
+                isPause ? isPause = false : isPause = true;
+                system.pause(isPause);
+                container.hidden = true;
+                menuOptions(0, 2);
+            } else if(elements.id == 'back') {
+                isPause ? isPause = false : isPause = true;
+                system.pause(isPause);
+                container.hidden = true;
+                menuGame(1);
+            }
+        });
+    });
 }

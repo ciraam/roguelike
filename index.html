@@ -9,9 +9,15 @@
     <title>Roguelike Project 1.0.0</title>
   </head>
   <body>
-    <div class="titlebar"><img src="img/icone.webp" id="icon" height="20" width="20" alt="Roguelike img" title="Roguelike"/>Roguelike Project 1.0.0</div>
+    <div id="loading-overlay" class="loading-hidden">
+      <div class="loading-spinner"></div>
+      <p>Chargement des données...</p>
+    </div>
+    <audio id="menuStartMusic" class="audio" loop src="sounds/ObservingTheStar.ogg"></audio>
+    <audio id="menuGameMusic" class="audio" loop src="sounds/Soliloquy.mp3"></audio>
+    <div class="titlebar"><img src="img/icone.webp" id="icon" height="20" width="20" alt="Roguelike img" title="Roguelike">Roguelike Project 1.0.0</div>
     <span id="btnResNTime">
-      <span title="Redémarre le jeu" id="restartButton">🔄</span>
+      <span title="Redémarrer le jeu" id="restartButton">🔄</span>
       <span id="time">
         <span id="hours"></span>
         <span id="separator">:</span>
@@ -19,8 +25,10 @@
         </span>
       </span>
     </span>
-    <div id="menu">
-    </div>
+    <div id="game-container" hidden></div>
+    <div id="menu-header"></div>
+    <div id="menu"></div>
+    <div id="menu-footer"></div>
     <!-- <button id="buttonWelcome">welcome</button> -->
     <div id="modal" class="modal">
       <div class="modal-content">
@@ -28,7 +36,6 @@
           <span id="closeModal" class="close">&times;</span>
           <span id="modalContent"></span>
       </div>
-    </div>
     <!-- <p id="info"></p> -->
   </body>
   <script src="./renderer.js"></script>
