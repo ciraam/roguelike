@@ -1339,7 +1339,7 @@ import physic from './physic.js';
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-const assetW = await loadWorld('./glb/world4.glb');
+const assetW = await loadWorld('./glb/world1.glb');
 const assetP = await loadEntity('./glb/character.glb');
 
 const scene = new Scene();

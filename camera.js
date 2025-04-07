@@ -8,13 +8,12 @@ export default class Camera extends PerspectiveCamera {
     constructor() {
         super(70, innerWidth / innerHeight);
         this.position.set(0, 5.4, 9);
-        this.lookAt(0, 0, 1.05);
+        this.lookAt(0, 1, 1.05);
     }
 
     update(player) {
         this.position.copy(player.position);
         this.position.y += 4;
-        // this.position.x -= 0.15;
         this.position.z += 4;
     }
 }

@@ -1,11 +1,13 @@
 import { LoopOnce, AnimationMixer } from 'three';
 import { findByName } from './function.js';
+import './overwrite.js';
 
 export default class Animator {
     animations = new Map();
     mixer = null;
     clips = null;
     current = null;
+    listeners = new Map();
 
     constructor(mesh) {
         this.mixer = new AnimationMixer(mesh);
@@ -15,11 +17,11 @@ export default class Animator {
 
     initListeners() {
         this.mixer.addEventListener('loop', () => {
-          this.fireListener( this.current._clip.name, 'loop');
+            this.fireListener(this.current._clip.name, 'loop');
         });
         this.mixer.addEventListener('half', () => {
-          this.fireListener( this.current._clip.name, 'half');
-        });
+            this.fireListener(this.current._clip.name, 'half');
+        })
     }
 
     load(name, duration, once) {
@@ -27,20 +29,17 @@ export default class Animator {
         const animation = this.mixer.clipAction(clip);
         animation.setDuration(duration);
         if(once) animation.setLoop(LoopOnce);
-        this.animations.set(name, duration);
+        this.animations.set(name, animation);
         this.listeners.set(name, new Map());
     }
 
     play(name) {
         const animation = this.animations.get(name);
-        if(this.current && this.current !== animation) this.current.stop;
+        if(this.current && this.current !== animation) this.current.stop();
         this.current = animation;
-        if(this.current.isRunning) return;
-        this.current.play;
-    }
-
-    isPlaying(name) {
-        return this.animations.get(name).isRunning();
+        if(this.current.isRunning()) return;
+        this.fireListener(this.current._clip.name, 'start');
+        this.current.play();
     }
 
     update(dt) {
@@ -49,7 +48,7 @@ export default class Animator {
 
     fireListener(name, event) {
         const listener = this.listeners.get(name);
-        if (listener.get(event)) listener.get(event)();
+        if(listener.get(event)) listener.get(event)();
     }
 
     on(name, event, callback) {

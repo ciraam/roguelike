@@ -165,9 +165,9 @@ export default class Control {
         return Math.abs(this.x) || Math.abs(this.z);
     }
     // // Méthode pour nettoyer les événements quand nécessaire
-    // dispose() {
-    //     clearInterval(this._updateAxesInterval);
-    //     // Idéalement, vous devriez aussi supprimer tous les écouteurs d'événements
-    //     // mais cela nécessiterait de stocker les références aux fonctions handlers
-    // }
+    dispose() {
+        clearInterval(this._updateAxesInterval);
+        // Idéalement, vous devriez aussi supprimer tous les écouteurs d'événements
+        // mais cela nécessiterait de stocker les références aux fonctions handlers
+    }
 }
