@@ -1,13 +1,13 @@
 const { app, BrowserWindow, ipcMain, Notification  } = require('electron/main');
 const path = require('node:path');
 const fs = require('fs');
-const bdd = require('./database.js');
+// const bdd = require('./database.js');
 const icon = path.join(__dirname, 'img/icon.ico');
 let win;
 let inGame = false;
 let isPause;
 
-app.disableHardwareAcceleration();
+// app.disableHardwareAcceleration();
 app.name = "roguelike project";
 
 const createWindow = () => {
@@ -17,8 +17,10 @@ const createWindow = () => {
     height: 700,
     titleBarStyle: 'hidden',
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    nodeIntegration: false,
-    contextIsolation: true,
+    // webgl: true,
+    nodeIntegration: true,
+    contextIsolation: false,
+    enableRemoteModule: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
   win.webContents.setFrameRate(60);
@@ -48,7 +50,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
   // id = null;
-  bdd.dbEnd();
+  // bdd.dbEnd();
 });
 
 ipcMain.on('inGame', (event, gameState) => {
@@ -72,7 +74,7 @@ ipcMain.on('restart', () => {
 ipcMain.on('end', () => {
   // id = null;
   app.quit();
-  bdd.dbEnd();
+  // bdd.dbEnd();
 });
 
 // vérifie si l'user a déjà lancé l'app
@@ -101,74 +103,74 @@ ipcMain.on('writeFileSettings', async (event, fileData)=> {
 
 // côté bdd //
 
-// permet de créer le profil de l'user à son premier lancement de l'app
-ipcMain.on('addUser', (event, userData) => {
-  const { user_pseudo } = userData;
-  if (user_pseudo != undefined) {
-    bdd.addUser(user_pseudo);
-    bdd.getUserByPseudo(user_pseudo, (err, user) => {
-      if (!err) {
-        fs.writeFileSync(filePath, user.user_id.toString());
-      } else {
-        sendNotification('Erreur', 'Aucun utilisateur avec ce pseudo');
-      }
-  });
-  }
-});
+// // permet de créer le profil de l'user à son premier lancement de l'app
+// ipcMain.on('addUser', (event, userData) => {
+//   const { user_pseudo } = userData;
+//   if (user_pseudo != undefined) {
+//     bdd.addUser(user_pseudo);
+//     bdd.getUserByPseudo(user_pseudo, (err, user) => {
+//       if (!err) {
+//         fs.writeFileSync(filePath, user.user_id.toString());
+//       } else {
+//         sendNotification('Erreur', 'Aucun utilisateur avec ce pseudo');
+//       }
+//   });
+//   }
+// });
 
-ipcMain.on('getLastGame', (event, userData) => {
-  const { user_id, user_last_game } = userData;
-  bdd.getLastGame(user_id, user_last_game, (err, score) => {
-    if (!err) {
-      event.reply('lastGame', score);
-    }
-  });
-});
+// ipcMain.on('getLastGame', (event, userData) => {
+//   const { user_id, user_last_game } = userData;
+//   bdd.getLastGame(user_id, user_last_game, (err, score) => {
+//     if (!err) {
+//       event.reply('lastGame', score);
+//     }
+//   });
+// });
 
-ipcMain.on('getUsers', (event) => {
-  bdd.getUsers((err, users) => {
-    if (!err) {
-      event.reply('users', users);
-    }
-  });
-});
+// ipcMain.on('getUsers', (event) => {
+//   bdd.getUsers((err, users) => {
+//     if (!err) {
+//       event.reply('users', users);
+//     }
+//   });
+// });
 
-ipcMain.on('getUserById', (event, user_id) => {
-  bdd.getUserById(user_id, (err, user) => {
-    if (!err) {
-      event.reply('userById', user);
-    }
-  });
-});
+// ipcMain.on('getUserById', (event, user_id) => {
+//   bdd.getUserById(user_id, (err, user) => {
+//     if (!err) {
+//       event.reply('userById', user);
+//     }
+//   });
+// });
 
-ipcMain.on('getUserByPseudo', (event, user_pseudo) => {
-  bdd.getUserByPseudo(user_pseudo, (err, user) => {
-    if (!err) {
-      event.reply('userByPseudo', user);
-    }
-  });
-});
+// ipcMain.on('getUserByPseudo', (event, user_pseudo) => {
+//   bdd.getUserByPseudo(user_pseudo, (err, user) => {
+//     if (!err) {
+//       event.reply('userByPseudo', user);
+//     }
+//   });
+// });
 
-ipcMain.on('addScore', (event, scoreData) => {
-  const { score_user_id, score_level_player, score_level_stage, score_kill, score_time } = scoreData;
-  console.log("Données reçues dans le main process:", scoreData);
-  if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
-    bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
-  }
-});
+// ipcMain.on('addScore', (event, scoreData) => {
+//   const { score_user_id, score_level_player, score_level_stage, score_kill, score_time } = scoreData;
+//   console.log("Données reçues dans le main process:", scoreData);
+//   if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
+//     bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
+//   }
+// });
 
-ipcMain.on('getScores', (event) => {
-  bdd.getScores((err, scores) => {
-    if (!err) {
-      event.reply('scores', scores);
-    }
-  });
-});
+// ipcMain.on('getScores', (event) => {
+//   bdd.getScores((err, scores) => {
+//     if (!err) {
+//       event.reply('scores', scores);
+//     }
+//   });
+// });
 
-ipcMain.on('getScoreById', (event, score_user_id) => {
-  bdd.getScoreById(score_user_id, (err, scoresById) => {
-    if (!err) {
-      event.reply('scoresById', scoresById);
-    }
-  });
-});
+// ipcMain.on('getScoreById', (event, score_user_id) => {
+//   bdd.getScoreById(score_user_id, (err, scoresById) => {
+//     if (!err) {
+//       event.reply('scoresById', scoresById);
+//     }
+//   });
+// });

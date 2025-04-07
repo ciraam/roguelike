@@ -19,9 +19,9 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        sendNotification('Erreur', 'Erreur de connexion à la base de données:', err.message);
+        // sendNotification('Erreur', 'Erreur de connexion à la base de données:', err.message);
     } else {
-        sendNotification('Connexion', 'Connexion à la base de données MySQL réussie');
+        // sendNotification('Connexion', 'Connexion à la base de données MySQL réussie');
     }
 });
 
