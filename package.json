@@ -10,7 +10,11 @@
     "start": "electron ."
   },
   "dependencies": {
-    "mysql2": "^3.14.0"
+    "@dimforge/rapier2d": "^0.15.0",
+    "@dimforge/rapier3d": "^0.15.0",
+    "gsap": "^3.12.7",
+    "mysql2": "^3.14.0",
+    "three": "^0.175.0"
   },
   "devDependencies": {
     "electron": "^35.0.1",

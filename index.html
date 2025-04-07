@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'"/>
     <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'"/>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.11.4/dist/gsap.min.js"></script>
+<script>
+  // Maintenant THREE et gsap sont disponibles globalement
+  const scene = new THREE.Scene();
+  gsap.to('#loading-overlay', { opacity: 0.5 });
+</script>
     <link href="./style.css" rel="stylesheet">
     <title>Roguelike Project 1.0.0</title>
   </head>
@@ -38,5 +44,5 @@
       </div>
     <!-- <p id="info"></p> -->
   </body>
-  <script src="./renderer.js"></script>
+  <script type="module" src="./renderer.js"></script>
 </html>

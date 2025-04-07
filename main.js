@@ -17,8 +17,10 @@ const createWindow = () => {
     height: 700,
     titleBarStyle: 'hidden',
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
+    webgl: true,
     nodeIntegration: false,
-    contextIsolation: true,
+    contextIsolation: false,
+    // sandbox: false,
     webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
   win.webContents.setFrameRate(60);
