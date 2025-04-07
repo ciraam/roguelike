@@ -45,5 +45,9 @@ export function range(angle1, angle2) {
 }
 
 export function findByName(name, list) {
-    return list.find(a => name ===a.name);
+    if (!name || !Array.isArray(list)) console.log('null');
+     
+    const z = list.find(item => item.name && item.name.toLowerCase() === name.toLowerCase()) || null;
+    if(z) console.log(z);
+    return z;
 }

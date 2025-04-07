@@ -2,10 +2,10 @@ import { Object3D } from "three";
 import { createRigidBodyFixed } from "./function.js";
 
 export default class World extends Object3D {
-    constructor(meshes, colliders, physic) {
+    constructor(visuals, colliders, physic) {
         super();
         this.initPhysic(colliders, physic);
-        this.initVisual(meshes);
+        this.initVisual(visuals);
     }
 
     initPhysic(meshes, physic) {

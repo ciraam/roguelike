@@ -10,6 +10,16 @@ export default class Animator {
     constructor(mesh) {
         this.mixer = new AnimationMixer(mesh);
         this.clips = mesh.clips;
+        this.initListeners();
+    }
+
+    initListeners() {
+        this.mixer.addEventListener('loop', () => {
+          this.fireListener( this.current._clip.name, 'loop');
+        });
+        this.mixer.addEventListener('half', () => {
+          this.fireListener( this.current._clip.name, 'half');
+        });
     }
 
     load(name, duration, once) {
@@ -18,6 +28,7 @@ export default class Animator {
         animation.setDuration(duration);
         if(once) animation.setLoop(LoopOnce);
         this.animations.set(name, duration);
+        this.listeners.set(name, new Map());
     }
 
     play(name) {
@@ -28,7 +39,20 @@ export default class Animator {
         this.current.play;
     }
 
+    isPlaying(name) {
+        return this.animations.get(name).isRunning();
+    }
+
     update(dt) {
         this.mixer.update(dt);
+    }
+
+    fireListener(name, event) {
+        const listener = this.listeners.get(name);
+        if (listener.get(event)) listener.get(event)();
+    }
+
+    on(name, event, callback) {
+        this.listeners.get(name).set(event, callback);
     }
 }

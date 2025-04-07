@@ -16,13 +16,14 @@ export default class Player extends Object3D {
 
     constructor(mesh, physic) {
         super();
-        const origin = new Vector3(0, 4, 0);
+        this.animator = new Animator(mesh);
         this.initPhysic(physic, origin);
         this.initVisual(mesh);
-        this.initAnimations(mesh);
+        this.initAnimations();
     }
 
     initPhysic(physic, origin) {
+        const origin = new Vector3(0, 4, 0);
         const { rigidBody, collider } = createRigidBodyEntity(origin, physic);
         this.rigidBody = rigidBody;
         this.collider = collider;
@@ -32,12 +33,12 @@ export default class Player extends Object3D {
         this.add(mesh);
     }
 
-    initAnimations(mesh) {
-        const animator = new Animator(mesh);
-        animator.load(IDLE, 3);
-        animator.load(RUN, 0.5);
-        animator.load(ATTACK, 0.3);
-        this.animator = animator;
+    initAnimations() {
+        // const animator = new Animator(mesh);
+        this.animator.load(IDLE, 2.4);
+        this.animator.load(RUN, 0.7);
+        this.animator.load(ATTACK, 0.5);
+        // this.animator = animator;
     }
 
     update(dt) {
@@ -47,11 +48,11 @@ export default class Player extends Object3D {
     }
 
     updatePhysic() {
-        const x = this.ctrl.x * SPEED;
-        const z = this.ctrl.z * SPEED;
-        const y = this.rigidBody.linvel().y; // useless askip ?
-        // const y = -50;
-        this.rigidBody.setLinvel({x, y, z}, true);
+        const attack = this.ctrl.attack
+        let x = attack ? 0 : this.ctrl.x * SPEED
+        let z = attack ? 0 : this.ctrl.z * SPEED
+        let y = this.rigidBody.linvel().y
+        this.rigidBody.setLinvel({ x, y, z }, true)
     }
 
     updateVisual(dt) {
@@ -61,14 +62,14 @@ export default class Player extends Object3D {
         }
     }
 
-    updateAnimation(dt) { // problème d'animation attaque, tout fonctionne et ruen manque sauf cett anim 
+    updateAnimation(dt) { // problème d'animation
         if(this.ctrl.attack) {
-            this.animator.play(ATTACK);
+            this.animator.play(RUN); console.log('click');
         } else if(this.ctrl.moving) {
-            this.animator.play(RUN);
+            this.animator.play(ATTACK);
         } else {
             this.animator.play(IDLE);
         }
-        this.animator.update(dt);
+        this.animator.update(dt)
     }
 }

@@ -10,6 +10,7 @@ export async function loadWorld(path) {
 
     for(const mesh of glb.scene.children) {
         const name = mesh.name;
+        console.log(name);
         if(name.includes('visual')) {
             visuals.push(mesh);
         } else if(name.includes('collider')) {
@@ -23,7 +24,11 @@ export async function loadWorld(path) {
 export async function loadEntity(path) {
     const glb = await loaderGlb.loadAsync(path);
     const mesh = glb.scene.children[0];
-    browse(mesh, m => m.castShadow = true);
+    browse(mesh, (m) => { m.castShadow = true });
     mesh.clips = glb.animations;
+    for(const mesh of glb.animations) {
+        const name = mesh.name;
+        console.log(name);
+    }
     return mesh;
 }
