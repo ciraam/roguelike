@@ -21,7 +21,7 @@ export default class Animator {
         });
         this.mixer.addEventListener('half', () => {
             this.fireListener(this.current._clip.name, 'half');
-        })
+        });
     }
 
     load(name, duration, once) {

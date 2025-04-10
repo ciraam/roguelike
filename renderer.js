@@ -1332,6 +1332,8 @@ import { loadEntity, loadWorld } from './loader.js';
 import World from './worlds.js';
 import Player from './player.js';
 import physic from './physic.js';
+import Mob1 from './mob1.js';
+import Mob2 from './mob2.js';
 
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
@@ -1339,28 +1341,64 @@ import physic from './physic.js';
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-const assetW = await loadWorld('./glb/world1.glb');
+const assetW = await loadWorld('./glb/world.glb');
 const assetP = await loadEntity('./glb/character.glb');
+const assetM1 = await loadEntity('./glb/mob1.glb');
+const assetM2 = await loadEntity('./glb/mob2.glb');
 
 const scene = new Scene();
 const camera = new Camera();
-
-const world = new World(assetW.visuals, assetW.colliders, physic);
-const player = new Player(assetP, physic);
 const light = new Light();
+const world = new World(assetW.visuals, assetW.colliders, physic);
+const player = new Player(assetP, assetW.spawn, physic);
+// const mobs1 = ast.spawnsMobA.map((m) => new Mob1(clone(ast.meshMob1), m, physic));
+// const mobs2 = ast.spawnsMobB.map((m) => new Mob2(clone(ast.meshMob2), m, physic));
+// const mobs1 = await loadEntity('./glb/mob1.glb');
+// const mobs2 = await loadEntity('./glb/mob2.glb');
+const mobs1 = assetW.spawnsMobA.map(new Mob1(assetM1, assetW.spawnsMobA, physic));
+const mobs2 = assetW.spawnsMobB.map(new Mob2(assetM2, assetW.spawnsMobB, physic));
+const mobs = mobs1.concat(mobs2);
+// const rubies = ast.meshesRubis.map((m) => new Rubis(m));
+// const hearts = ast.meshesHeart.map((m) => new Heart(m));
+// const bloks = ast.meshesBlock.map((m) => new Block(m, physic));
+// const boxes = ast.meshesBox.map((m) => new Box(m, physic));
+// const areas = ast.meshesArea.map((m) => new Area(m));
+// const grasses = ast.meshesGrass.map((m) => new Grass(m));
+// const focus = new Focus();
 
+// scene.add(...rubies);
+// scene.add(...hearts);
+// scene.add(...bloks);
+// scene.add(...boxes);
+// scene.add(...grasses);
+scene.add(...mobs);
 scene.add(world);
 scene.add(light);
 scene.add(player);
 
 const graphic = new Graphic(scene, camera);
 graphic.onUpdate(dt => {
+  for (const mob of mobs) mob.update(dt, player);
+  // for (const rubis of rubies) rubis.update(dt, player);
+  // for (const heart of hearts) heart.update(dt, player);
+  // for (const blok of bloks) blok.update(player);
+  // for (const box of boxes) box.update(dt);
   physic.step();
-  player.update(dt);
+  player.update(dt, mobs, grasses, boxes, areas);
   camera.update(player);
   light.update(player);
 });
 
+Mob1.onDelete((pos, instance) => {
+  if (proba(0.2)) createHeart(pos);
+  if (proba(0.2)) createRubis(pos, 10);
+  removeFromArray(instance, mobs);
+});
+
+Mob2.onDelete((pos, instance) => {
+  if (proba(0.25)) createHeart(pos);
+  removeFromArray(instance, mobs);
+});
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 // 
