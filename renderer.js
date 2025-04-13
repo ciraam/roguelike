@@ -1355,8 +1355,8 @@ const player = new Player(assetP, assetW.spawn, physic);
 // const mobs2 = ast.spawnsMobB.map((m) => new Mob2(clone(ast.meshMob2), m, physic));
 // const mobs1 = await loadEntity('./glb/mob1.glb');
 // const mobs2 = await loadEntity('./glb/mob2.glb');
-const mobs1 = assetW.spawnsMobA.map(new Mob1(assetM1, assetW.spawnsMobA, physic));
-const mobs2 = assetW.spawnsMobB.map(new Mob2(assetM2, assetW.spawnsMobB, physic));
+const mobs1 = assetW.spawnsMobA.map((m) => new Mob1(assetM1, m, physic));
+const mobs2 = assetW.spawnsMobB.map((m) => new Mob2(assetM2, m, physic));
 const mobs = mobs1.concat(mobs2);
 // const rubies = ast.meshesRubis.map((m) => new Rubis(m));
 // const hearts = ast.meshesHeart.map((m) => new Heart(m));
@@ -1378,25 +1378,26 @@ scene.add(player);
 
 const graphic = new Graphic(scene, camera);
 graphic.onUpdate(dt => {
+  physic.step();
   for (const mob of mobs) mob.update(dt, player);
   // for (const rubis of rubies) rubis.update(dt, player);
   // for (const heart of hearts) heart.update(dt, player);
   // for (const blok of bloks) blok.update(player);
   // for (const box of boxes) box.update(dt);
-  physic.step();
-  player.update(dt, mobs, grasses, boxes, areas);
+  // player.update(dt, mobs, grasses, boxes, areas);
+  player.update(dt, mobs);
   camera.update(player);
   light.update(player);
 });
 
 Mob1.onDelete((pos, instance) => {
-  if (proba(0.2)) createHeart(pos);
-  if (proba(0.2)) createRubis(pos, 10);
+  // if (proba(0.2)) createHeart(pos);
+  // if (proba(0.2)) createRubis(pos, 10);
   removeFromArray(instance, mobs);
 });
 
 Mob2.onDelete((pos, instance) => {
-  if (proba(0.25)) createHeart(pos);
+  // if (proba(0.25)) createHeart(pos);
   removeFromArray(instance, mobs);
 });
 ////////////////////////////////////////////////////////////////////////

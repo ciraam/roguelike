@@ -1,14 +1,17 @@
-import { Vector3, Object3D } from 'three';
+import { Vector3, Vector2, Object3D } from 'three';
 import Ai from './ai.js';
+import Animator from './animator.js';
 // import Particles from '../effect/particles';
 // import Entity from './entity';
-import { getGap, inHitBox, browse, getDistance } from './function.js';
+import { getGap, inHitBox, browse, getDistance, createRigidBodyEntity } from './function.js';
 
-const ATTACK = 1;
-const JUMP = 2;
-const DEAD = 3;
-const HIT = 4;
-const IDLE = 5;
+const SPEED = 1.5;
+const ATTACK = 'attack';
+const JUMP = 'jump';
+const BLOCK = 'block';
+const DEAD = 'dead';
+const HIT = 'hit';
+const IDLE = 'idle';
 // const SOUND_RANGE = 1;
 const VELOCITY = 0.4;
 const DEMAGE = 1.5;
@@ -17,6 +20,8 @@ export default class Mob2 extends Object3D {
   static hitAngle = Math.PI / 2;
   static hitRange = 1.8;
   static cbDelete = null;
+  rotationVel = 0;
+  positionVel = new Vector2();
   hp = 3;
   distance = 999;
   ctrl = null;
@@ -48,7 +53,6 @@ export default class Mob2 extends Object3D {
   update(dt, player) {
     this.updatePhysic();
     this.updateVisual(dt);
-    this.updateAnimation(dt);
     this.onUpdate(dt, player);
 }
 
@@ -80,13 +84,14 @@ updateVisual(dt) {
       }
     }
     this.updateDistance(player);
+    this.animator.update(dt);
   }
 
   updateAnimIdle() {
     if (this.ctrl.lock) {
-      this.anim(IDLE_SHIELD);
+      this.animator.play(IDLE_SHIELD);
     } else {
-      this.anim(IDLE);
+      this.animator.play(IDLE);
     }
   }
 
@@ -98,13 +103,13 @@ updateVisual(dt) {
 
   updateAnimAttack(player) {
     if (!player) return
-    if (!this.anim(ATTACK)) return this.sound(JUMP);
-    this.onAnimHalf(() => {
+    if (!this.animator.play(ATTACK)) return this.sound(JUMP);
+    this.animator.onAnimHalf(() => {
       if (inHitBox(this, player)) {
         player.hit(this, DEMAGE);
       }
     });
-    this.onAnimEnd(() => {
+    this.animator.onAnimEnd(() => {
       this.positionVel.x = 0;
       this.positionVel.y = 0;
     });
@@ -117,8 +122,8 @@ updateVisual(dt) {
   }
 
   updateAnimWalk() {
-    if (!this.anim(JUMP)) return this.onAnimHalf(() => {
-      this.sound(JUMP, this.volume);
+    if (!this.animator.play(JUMP)) return this.animator.onAnimHalf(() => {
+      // this.sound(JUMP, this.volume);
     });
   }
 
@@ -128,7 +133,7 @@ updateVisual(dt) {
   }
 
   updateAnimIdle() {
-    this.anim(IDLE);
+    this.animator.play(IDLE);
   }
 
   updateDistance(player) {
@@ -138,16 +143,16 @@ updateVisual(dt) {
   }
 
   updateClipHit() {
-    this.anim(HIT);
-    this.sound(HIT);
-    this.onAnimEnd(() => {
-      this.anim(IDLE);
+    this.animator.play(HIT);
+    // this.sound(HIT);
+    this.animator.onAnimEnd(() => {
+      this.animator.play(IDLE);
     });
   }
 
   hit(entity) {
     if (this.isCooldown) return
-    // this.createParticles(entity)
+    this.createParticles(entity)
     this.hp -= 1;
     this.positionVel.set(0, 0);
     this.rotationVel = 0;
@@ -157,7 +162,7 @@ updateVisual(dt) {
 
   updateClipDaying() {
     this.scale.set(0, 0, 0);
-    this.sound(DEAD);
+    // this.sound(DEAD);
     this.delete();
     if (Mob2.cbDelete) Mob2.cbDelete(this.position, this);
   }
@@ -169,22 +174,26 @@ updateVisual(dt) {
   }
 
   get isBusy() {
-    return this.isAnim(HIT) || this.isAnim(ATTACK) || this.hp <= 0;
+    return this.animator.play(HIT) || this.animator.play(ATTACK) || this.hp <= 0;
   }
 
   get isCooldown() {
-    return this.isAnim(HIT) || this.hp <= 0;
+    return this.animator.play(HIT) || this.hp <= 0;
   }
 
   get volume() {
     return SOUND_RANGE / this.distance;
   }
 
+  static onDelete(callback) {
+    this.cbDelete = callback
+  }
+
   initAnimations() {
-    this.loadAnim(ATTACK, 'attack', 1, true);
-    this.loadAnim(HIT, 'hit', 0.4, true);
-    this.loadAnim(IDLE, 'idle', 2);
-    this.loadAnim(JUMP, 'jump', 1);
+    this.animator.load('attack', 0.3);
+    this.animator.load('hit', 0.4);
+    this.animator.load('idle', 2);
+    this.animator.load('jump', 1);
   }
 
 }

@@ -45,6 +45,18 @@ export default class Animator {
     update(dt) {
         this.mixer.update(dt);
     }
+    
+    onAnimEnd(callback) {
+        this.mixer.addEventListener('finished', callback);
+    }
+
+    onAnimLoop(callback) {
+        this.mixer.addEventListener('loop', callback);
+    }
+
+    onAnimHalf(callback) {
+        this.mixer.addEventListener('half', callback);
+    }
 
     fireListener(name, event) {
         const listener = this.listeners.get(name);

@@ -1,18 +1,20 @@
-import { Vector3, Object3D } from 'three';
+import { Vector3, Vector2, Object3D } from 'three';
 import Ai from './ai.js';
+import Animator from './animator.js';
 // import Particles from '../effect/particles';
 // import Entity from './entity';
-import { getGap, inHitBox, browse, getDistance } from './function.js';
+import { getGap, inHitBox, browse, getDistance, createRigidBodyEntity } from './function.js';
 
-const ATTACK = 1;
-const BLOCK = 2;
-const DEAD = 3;
-const HIT = 4;
-const IDLE = 5;
-const IDLE_SHIELD = 6;
-const STRAF_SHIELD = 7;
-const WALK_SHIELD = 8;
-const WALK = 9;
+const SPEED = 1.5;
+const ATTACK = 'attack';
+const BLOCK = 'block';
+const DEAD = 'dead';
+const HIT = 'hit';
+const IDLE = 'idle';
+const IDLE_SHIELD = 'idle_shield';
+const STRAF_SHIELD = 'straff_shield';
+const WALK_SHIELD = 'walk_shield';
+const WALK = 'walk';
 // const STEP_L = 10;
 // const STEP_R = 11;
 // const SOUND_RANGE = 2;
@@ -23,6 +25,8 @@ export default class Mob1 extends Object3D {
   static hitAngle = Math.PI / 2;
   static hitRange = 1.8;
   static cbDelete = null;
+  rotationVel = 0;
+  positionVel = new Vector2();
   hp = 2;
   distance = 999;
   ctrl = null;
@@ -56,10 +60,9 @@ export default class Mob1 extends Object3D {
   }
   
     update(dt, player) {
-        this.updatePhysic();
-        this.updateVisual(dt);
-        this.updateAnimation(dt);
-        this.onUpdate(dt, player);
+      this.updatePhysic();
+      this.updateVisual(dt);
+      this.onUpdate(dt, player);
     }
 
     updatePhysic() {
@@ -91,6 +94,7 @@ export default class Mob1 extends Object3D {
       }
     }
     this.updateDistance(player);
+    this.animator.update(dt);
   }
 
   updatePropsAttack() {
@@ -100,8 +104,8 @@ export default class Mob1 extends Object3D {
 
   updateAnimAttack(player) {
     if (!player) return;
-    if (!this.anim(ATTACK)) return this.onAnimHalf(() => {
-      this.sound(ATTACK);
+    if (!this.animator.play(ATTACK)) return this.onAnimHalf(() => {
+      // this.sound(ATTACK);
       if (inHitBox(this, player)) {
         player.hit(this, DEMAGE);
       }
@@ -116,9 +120,9 @@ export default class Mob1 extends Object3D {
 
   updateAnimWalk() {
     if (this.ctrl.focus) {
-      if (!this.anim(WALK_SHIELD)) return this.soundStep();
+      if (!this.animator.play(WALK_SHIELD)) return this.soundStep();
     } else {
-      if (!this.anim(WALK)) return this.soundStep();
+      if (!this.animator.play(WALK)) return this.soundStep();
     }
   }
 
@@ -129,12 +133,12 @@ export default class Mob1 extends Object3D {
 
   updateAnimIdle() {
     if (this.rotating) {
-    //   if (!this.anim(STRAF_SHIELD, this.signRotation)) return
+      if (!this.animator.play(STRAF_SHIELD)) return
     //   this.soundStep()
     } else if (this.ctrl.focus) {
-      this.anim(IDLE_SHIELD);
+      this.animator.play(IDLE_SHIELD);
     } else {
-      this.anim(IDLE);
+      this.animator.play(IDLE);
     }
   }
 
@@ -144,29 +148,33 @@ export default class Mob1 extends Object3D {
   }
 
   updateAnimHit() {
-    this.anim(HIT);
+    this.animator.play(HIT);
     // this.sound(HIT);
   }
 
   updateAnimBlock() {
-    this.anim(BLOCK);
+    this.animator.play(BLOCK);
     // this.sound(BLOCK);
   }
   updateAnimIdle() {
     if (this.ctrl.lock) {
-      this.anim(IDLE_SHIELD);
+      this.animator.play(IDLE_SHIELD);
     } else {
-      this.anim(IDLE);
+      this.animator.play(IDLE);
     }
   }
   updateAnimDead() {
-    this.anim(DEAD);
+    this.animator.play(DEAD);
     // this.sound(HIT)
-    this.onAnimEnd(() => {
+    this.animator.onAnimEnd(() => {
     //   this.sound(DEAD)
       this.delete();
       if (Mob1.cbDelete) Mob1.cbDelete(this.position, this);
     });
+  }
+
+  static onDelete(callback) {
+    this.cbDelete = callback
   }
 
   hit(entity) {
@@ -181,6 +189,12 @@ export default class Mob1 extends Object3D {
     }
   }
 
+  createParticles(entity) {
+    const x = (this.position.x * 3 + entity.position.x * 1) / 4;
+    const z = (this.position.z * 3 + entity.position.z * 1) / 4;
+    this.parent.add(new Particles(new Vector3(x, this.position.y - 0.2, z)));
+  }
+
   updateDistance(player) {
     if (player) {
       this.distance = getDistance(player.position, this.position);
@@ -188,26 +202,26 @@ export default class Mob1 extends Object3D {
   }
 
   isVulnerable(entity) {
-    return this.isAnim(ATTACK) || !inHitBox(this, entity, Math.PI);
+    return this.animator.play(ATTACK) || !inHitBox(this, entity, Math.PI);
   }
 
   get isBusy() {
-    return (this.isAnim(HIT) || this.isAnim(BLOCK) || this.isAnim(ATTACK) || this.hp <= 0);
+    return (this.animator.play(HIT) || this.animator.play(BLOCK) || this.animator.play(ATTACK) || this.hp <= 0);
   }
 
   get isCooldown() {
-    return this.isAnim(HIT) || this.isAnim(BLOCK) || this.hp <= 0;
+    return this.animator.play(HIT) || this.animator.play(BLOCK) || this.hp <= 0;
   }
 
   initAnimations() {
-    this.loadAnim(ATTACK, 'attack', 2, true);
-    this.loadAnim(BLOCK, 'block', 0.2, true);
-    this.loadAnim(DEAD, 'dead', 2, true);
-    this.loadAnim(HIT, 'hit', 0.5, true);
-    this.loadAnim(IDLE, 'idle', 2);
-    this.loadAnim(IDLE_SHIELD, 'idle_shield', 2);
-    this.loadAnim(STRAF_SHIELD, 'straff_shield', 0.5);
-    this.loadAnim(WALK_SHIELD, 'walk_shield', 1.48);
-    this.loadAnim(WALK, 'walk', 1.48);
+    this.animator.load('attack', 0.3);
+    this.animator.load('block', 0.2);
+    this.animator.load('dead', 2);
+    this.animator.load('hit', 0.5);
+    this.animator.load('idle', 2);
+    this.animator.load('idle_shield', 2);
+    this.animator.load('straff_shield', 0.5);
+    this.animator.load('walk_shield', 1.48);
+    this.animator.load('walk', 1.48);
   }
 }

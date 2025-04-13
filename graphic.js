@@ -17,7 +17,7 @@ export default class Graphic extends WebGLRenderer {
         this.camera = camera;
         this.setSize(canvas.width, canvas.height);
         this.shadowMap.enabled = true;
-        this.loop = this.loop.bind(this);
+        this.cbLoop = this.loop.bind(this);
         this.loop();
     }
 
@@ -25,7 +25,7 @@ export default class Graphic extends WebGLRenderer {
         const dt = this.clock.getDelta();
         if(this.cbUpdate) this.cbUpdate(dt);
         this.render(this.scene, this.camera);
-        requestAnimationFrame(this.loop);
+        requestAnimationFrame(this.cbLoop);
     }
 
     onUpdate(callback) {

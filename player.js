@@ -1,4 +1,4 @@
-import { Object3D, Vector3 } from 'three';
+import { Object3D, Vector3, Vector2 } from 'three';
 import Control from './control.js';
 import Animator from './animator.js';
 import {
@@ -49,6 +49,8 @@ const VELOCITY = 3;
 export default class Player extends Object3D {
     static hitAngle = Math.PI / 4;
     static hitRange = 2.5;
+    rotationVel = 0;
+    positionVel = new Vector2();
     hp = 4;
     hpMax = 4;
     // rubies = 0
@@ -153,24 +155,24 @@ export default class Player extends Object3D {
     
       updateAnimIdle() {
         if (this.ctrl.lock) {
-          this.anim(IDLE_SHIELD);
+          this.animator.play(IDLE_SHIELD);
         } else {
-          this.anim(IDLE);
+          this.animator.play(IDLE);
         }
       }
     
     
       updateAnimHit() {
-        this.anim(HIT);
+        this.animator.play(HIT);
         // this.sound(CRY)
       }
     
       updateAnimFall() {
-        return this.anim(FALL);
+        return this.animator.play(FALL);
       }
     
       hit(entity, damage) {
-        if (this.isCooldown) return
+        // if (this.isCooldown) return
         // this.createParticles(entity)
         this.hp -= damage;
         this.hp = Math.max(0, this.hp);
@@ -183,9 +185,9 @@ export default class Player extends Object3D {
       }
     
       updateAnimDaying() {
-        this.anim(DEAD);
+        this.animator.play(DEAD);
         this.onAnimEnd(() => {
-          this.sound(DEAD);
+          // this.sound(DEAD);
           this.delete();
           if(Player.cbDelete)
           Player.cbDelete(this);
@@ -231,39 +233,39 @@ export default class Player extends Object3D {
         this.contact = normal;
       }
     
-      get isBusy() {
-        return this.isAttack || this.isCooldown;
-      }
+      // get isBusy() {
+      //   return this.isAttack || this.isCooldown;
+      // }
     
-      get isCooldown() {
-        return (this.isAnim(HIT) || this.isAnim(JUMP) || this.isAnim(ROLL) || this.hp <= 0);
-      }
+      // get isCooldown() {
+      //   return (this.isAnim(HIT) || this.isAnim(JUMP) || this.isAnim(ROLL) || this.hp <= 0);
+      // }
     
-      get isRoll() {
-        return this.isAnim(ROLL) || this.isAnim(JUMP);
-      }
+      // get isRoll() {
+      //   return this.isAnim(ROLL) || this.isAnim(JUMP);
+      // }
     
-      get isAttack() {
-        return this.isAnim(ATTACK) || this.isAnim(ATTACK_LOADED);
-      }
+      // get isAttack() {
+      //   return this.isAnim(ATTACK) || this.isAnim(ATTACK_LOADED);
+      // }
     
-      get isShield() {
-        return this.isAnim(IDLE_SHIELD) || this.isAnim(RUN_SHIELD) || this.isAnim(STRAF);
-      }
+      // get isShield() {
+      //   return this.isAnim(IDLE_SHIELD) || this.isAnim(RUN_SHIELD) || this.isAnim(STRAF);
+      // }
     
-      get focus() {
-        return this.focused;
-      }
+      // get focus() {
+      //   return this.focused;
+      // }
     
-      get isPushing() {
-        const c = this.contact;
-        if (!c) return false;
-        if (!this.positionVel.length()) return false;
-        const pushedY = c.x === 0 && -Math.sign(c.y) === Math.sign(this.positionVel.y);
-        const pushedX = c.y === 0 && -Math.sign(c.x) === Math.sign(this.positionVel.x);
-        if (!pushedY && !pushedX) return false;
-        return true;
-      }
+      // get isPushing() {
+      //   const c = this.contact;
+      //   if (!c) return false;
+      //   if (!this.positionVel.length()) return false;
+      //   const pushedY = c.x === 0 && -Math.sign(c.y) === Math.sign(this.positionVel.y);
+      //   const pushedX = c.y === 0 && -Math.sign(c.x) === Math.sign(this.positionVel.x);
+      //   if (!pushedY && !pushedX) return false;
+      //   return true;
+      // }
     
     //   set ground(value) {
     //     this.groundType = value
