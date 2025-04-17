@@ -1,4 +1,4 @@
-# Roguelike
+# Roguelike Project
 
 **Projet du 13/03/25 pour le 19/04/25** : Jeu de type **Roguelike** développé avec **Javascript** et **Electron** pour une application de bureau.
 
