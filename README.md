@@ -17,7 +17,7 @@ Le projet consiste à créer un jeu de type **Roguelike** où le joueur explore 
 
 ### 1. Combat en temps réel
 - Les **combats** se déroulent en temps réel, où le joueur et les ennemis peuvent attaquer et se déplacer simultanément, sans attendre un tour de jeu.
-- Le joueur doit réagir rapidement aux actions des ennemis et décider du bon moment pour attaquer (ou utiliser des compétences ?).
+- Le joueur doit réagir rapidement aux actions des ennemis et décider du bon moment pour attaquer ou esquiver.
 
 ### 2. Progression du personnage
 - **Complétion niveau** : Chaque niveau passé renforce les monstres.
