@@ -152,10 +152,10 @@ ipcMain.on('getUserByPseudo', (event, user_pseudo) => {
 });
 
 ipcMain.on('addScore', (event, scoreData) => {
-  const { score_user_id, score_level_player, score_level_stage, score_kill, score_time } = scoreData;
+  const { score_user_id, score_score, score_level_player, score_level_stage, score_kill, score_time } = scoreData;
   console.log("Données reçues dans le main process:", scoreData);
-  if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
-    bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
+  if (score_user_id !== undefined && score_score !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
+    bdd.addScore(score_user_id, score_score, score_level_player, score_level_stage, score_kill, score_time);
   }
 });
 
