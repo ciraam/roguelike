@@ -7,7 +7,7 @@ let win;
 let inGame = false;
 let isPause;
 
-app.disableHardwareAcceleration();
+// app.disableHardwareAcceleration();
 app.name = "roguelike project";
 
 const createWindow = () => {
@@ -17,17 +17,17 @@ const createWindow = () => {
     height: 700,
     titleBarStyle: 'hidden',
     ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-    webgl: true,
-    nodeIntegration: false,
+    // webgl: true,
+    nodeIntegration: true,
     contextIsolation: false,
-    // sandbox: false,
+    enableRemoteModule: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js') }
   });
-  win.webContents.setFrameRate(60);
+  win.webContents.setFrameRate(75);
   win.resizable = false;
   win.setBackgroundColor('rgba(61, 61, 61, 0.5)');
   win.loadFile('index.html');
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 // envoyer une notification bureau
@@ -50,7 +50,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
   // id = null;
-  bdd.dbEnd();
+  // bdd.dbEnd();
 });
 
 ipcMain.on('inGame', (event, gameState) => {
@@ -74,11 +74,11 @@ ipcMain.on('restart', () => {
 ipcMain.on('end', () => {
   // id = null;
   app.quit();
-  bdd.dbEnd();
+  // bdd.dbEnd();
 });
 
 // vérifie si l'user a déjà lancé l'app
-const filePath = path.join(__dirname, 'node_modules/keyv/DONTTOUCH.txt');
+const filePath = path.join('DONTTOUCH.txt');
 ipcMain.handle('fileExists', () => {
   return fs.existsSync(filePath);
 });
@@ -156,6 +156,14 @@ ipcMain.on('addScore', (event, scoreData) => {
   console.log("Données reçues dans le main process:", scoreData);
   if (score_user_id !== undefined && score_level_player !== undefined && score_level_stage !== undefined && score_kill !== undefined && score_time !== undefined) {
     bdd.addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time);
+  }
+});
+
+ipcMain.on('addUserScore', (event, userData) => {
+  const { user_id, user_bestscore, user_count_death, user_last_game  } = userData;
+  console.log("Données reçues dans le main process:", userData);
+  if (user_id !== undefined && user_bestscore !== undefined && user_count_death !== undefined && user_last_game !== undefined) {
+    bdd.addUserScore(user_id, user_bestscore, user_count_death, user_last_game);
   }
 });
 

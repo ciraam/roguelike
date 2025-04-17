@@ -19,9 +19,9 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        sendNotification('Erreur', 'Erreur de connexion à la base de données:', err.message);
+        // sendNotification('Erreur', 'Erreur de connexion à la base de données:', err.message);
     } else {
-        sendNotification('Connexion', 'Connexion à la base de données MySQL réussie');
+        // sendNotification('Connexion', 'Connexion à la base de données MySQL réussie');
     }
 });
 
@@ -29,28 +29,38 @@ function dbEnd() {
     db.end();
 }
 
-function addScore(score_user_id, score_level_player, score_level_stage, score_kill, score_time) {
-    const query = `INSERT INTO score (score_user_id, score_level_player, score_level_stage, score_kill, score_time) VALUES (?, ?, ?, ?, ?)`;
-    db.query(query, [score_user_id, score_level_player, score_level_stage, score_kill, score_time], (err, results) => {
+function addScore(score_user_id, score_score, score_level_player, score_level_stage, score_kill, score_time) {
+    const query = `INSERT INTO score (score_user_id, score_score, score_level_player, score_level_stage, score_kill, score_time) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.query(query, [score_user_id, score_score, score_level_player, score_level_stage, score_kill, score_time], (err, results) => {
         if (err) {
             console.log('Erreur lors de l\'insertion du score:', err);
-            sendNotification('Erreur lors de l\'insertion du score', `${err.code}: ${err.message}`);
+            // sendNotification('Erreur lors de l\'insertion du score', `${err.code}: ${err.message}`);
         }
     });
 }
 
-function getScoreById(score_user_id) {
-    const query = `SELECT * FROM score WHERE score_user_id = ?`;
-    db.query(query, [score_user_id], (err, results) => {
+function addUserScore(user_id, user_bestscore, user_count_death, user_last_game) {
+    const query = `UPDATE user SET (user_bestscore, user_count_death, user_last_game) VALUES (?, ?, ?) WHERE user_id = ?`;
+    db.query(query, [user_bestscore, user_count_death, user_last_game, user_id], (err, results) => {
         if (err) {
-            console.log('Erreur lors de la récupération des scores:', err);
-        } else {
-            console.log('Scores récupérés:', results);
-            sendNotification('renvoie score', results);
-            return results;
+            console.log('Erreur lors de l\'insertion du score:', err);
+            // sendNotification('Erreur lors de l\'insertion du score', `${err.code}: ${err.message}`);
         }
     });
 }
+
+// function getScoreById(score_user_id) {
+//     const query = `SELECT * FROM score WHERE score_user_id = ?`;
+//     db.query(query, [score_user_id], (err, results) => {
+//         if (err) {
+//             console.log('Erreur lors de la récupération des scores:', err);
+//         } else {
+//             console.log('Scores récupérés:', results);
+//             sendNotification('renvoie score', results);
+//             return results;
+//         }
+//     });
+// }
 
 function getScoreById(score_user_id, callback) {
     const query = `SELECT * FROM score WHERE score_user_id = ?`;
@@ -104,7 +114,7 @@ function addUser(user_pseudo) {
     db.query(query, [user_pseudo], (err, results) => {
         if (err) {
             console.log('Erreur lors de l\'insertion de l\'user:', err);
-            sendNotification('Erreur lors de l\'insertion de l\'user:', `${err.code}: ${err.message}`);
+            // sendNotification('Erreur lors de l\'insertion de l\'user:', `${err.code}: ${err.message}`);
         }
     });
 }
@@ -190,6 +200,7 @@ function getUsers(callback) {
 // pour utiliser dans le main & le renderer principalement
 module.exports = {
     addScore,
+    addUserScore,
     getScores,
     getScoreById,
     getLastGame,

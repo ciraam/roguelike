@@ -1,5 +1,24 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
-import gsap from 'https://cdn.skypack.dev/gsap@3.11.4';
+import { clone, spreadAround, proba, cleanGame, cleanGameLevel, removeFromArray } from './tool/function.js'
+import { Scene } from 'https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js'
+import World from './entity/world.js'
+import Player from './entity/player.js'
+import Mob1 from './entity/mob1.js'
+import Mob2 from './entity/mob2.js'
+import Grass from './object/grass.js'
+import Block from './object/block.js'
+import Box from './object/box.js'
+import Rubis from './object/rubis.js'
+import Heart from './object/heart.js'
+import Area from './effect/area.js'
+import Focus from './effect/focus.js'
+import Graphic from './engine/graphic.js'
+import Camera from './engine/camera.js'
+import Light from './engine/light.js'
+import Rules from './tool/rules.js'
+import UI from './ui/ui.js'
+// import Home from './ui/home.js'
+import loadAssets from './tool/loader.js'
+import physic from './engine/physic.js'
 
 let userCoData = {
     user_id: 0,
@@ -7,25 +26,24 @@ let userCoData = {
     user_createtime: ""
 }
 let userData = {
-    user_id: 0,
-    user_name: "",
-    user_bestscore: 0,
-    user_count_death: 0,
+    user_id: null,
+    user_bestscore: null,
+    user_count_death: null,
     user_last_game: ""
 };
 let scoreData = {
     score_user_id: null,
+    score_score: null,
     score_level_player: null,
     score_level_stage: null,
-    score_kill: 0,
-    score_time: '',
-    score_createtime: ''
+    score_kill: null,
+    score_time: ''
 };
 let scoreLastGameData = {
     score_user_id: null,
     score_level_player: null,
     score_level_stage: null,
-    score_kill: 0,
+    score_kill: null,
     score_time: ''
 };
 let notifData = {
@@ -106,6 +124,28 @@ function formatDate(dateStr) {
     return `${day}-${month}-${year}`;
 }
 
+function formatDurationForMySQL(totalMilliseconds) {
+    // 1. S'assurer que c'est un nombre valide
+    if (isNaN(totalMilliseconds)) {
+      throw new Error("Le temps doit être un nombre (millisecondes)");
+    }
+  
+    // 2. Convertir en secondes entières
+    const totalSeconds = Math.floor(totalMilliseconds / 1000);
+  
+    // 3. Calculer les composants temps
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+  
+    // 4. Formater en HH:MM:SS
+    return [
+      hours.toString().padStart(2, '0'),
+      minutes.toString().padStart(2, '0'),
+      seconds.toString().padStart(2, '0')
+    ].join(':');
+  }
+
 // permet de gérer une modale
 const modal = document.getElementById('modal');
 const closeModal = document.getElementById('closeModal');
@@ -142,7 +182,8 @@ function muteUnmute(type) {
     });
 }
 const menuStartMusic = document.getElementById('menuStartMusic');
-const menuGameMusic = document.getElementById('menuGameMusic');
+let menuMusic = false;
+// const menuGameMusic = document.getElementById('menuGameMusic');
 // côté son //
 
 // côté état //
@@ -170,11 +211,15 @@ if(menuBalise) {
 }
 
 function menu() {
-    system.inGame(inGame = false);
-    menuStartMusic.volume = 0.15;
-    menuStartMusic.play();
+    inGame = false
+    system.inGame(inGame);
+    if(!menuMusic) {
+        menuStartMusic.volume = 0.15;
+        menuStartMusic.play();
+        menuMusic = true;
+    }
     menuBalise.innerHTML = `
-        <h2 id="titleStart">Bienvenue sur Roguelike (nom à changer) ! 👋</h2>
+        <h2 id="titleStart">Bienvenue sur Roguelike Project ! 👋</h2>
         <div id="menuStart">
             <button id="0" class="buttonStart">Jouer</button>
             <button id="1" class="buttonStart">Options</button>
@@ -213,9 +258,10 @@ function menu() {
                                 user_createtime: user.user_createtime
                             }
                             state = null;
+                            // menuGameState = 1
                             menuGame(menuGameState = 1);
-                            menuStartMusic.pause();
-                            menuStartMusic.currentTime = 0;
+                            // menuStartMusic.pause();
+                            // menuStartMusic.currentTime = 0;
                         });
                     } else {
                         return console.log('📝');
@@ -246,11 +292,13 @@ function modalFirstStart() { // problème pour relancer la modale si champ vide 
                 if (pseudo == "") {
                     modalContent.innerHTML += `</br></br><span>Le champ ne doit pas être vide</span>`;
                     pseudo = "";
-                    modalFirstStart();
+                    // modalFirstStart();
+                    closeModalFunction();
                 } else if (users.some(user => user.user_pseudo == pseudo)) {
                     modalContent.innerHTML += `</br></br><span>Pseudo déjà utilisé</span>`;
                     pseudo = "";
-                    modalFirstStart();
+                    // modalFirstStart();
+                    closeModalFunction();
                 } else {
                     closeModalFunction();
                     userData = { user_pseudo: pseudo, user_name: "" , user_bestcore: 0, user_count_death: 0, user_last_game: ""};
@@ -258,7 +306,7 @@ function modalFirstStart() { // problème pour relancer la modale si champ vide 
                     notifData = { title: "Premier lancement", content: 'Bienvenue ' + pseudo + ' !'};
                     db.ipcRenderer.send('sendNotification', notifData);
                     state = 0;
-                    menu();
+                    menuGame(1);
                 }
             });
         });
@@ -344,15 +392,13 @@ function menuOptions(settingState, currMenu) {
                             - À droite : D </br>
                             - À gauche : Q </br>
                             - En bas : S </br>
-                        <li><u>Tirer</u></li>
-                            - Barre espace (Spacebar) </br>
+                        <li><u>Attaquer</u></li>
+                            - Attaque simple : Clic gauche</br>
+                            - Attaque tournoyante : Maintient clic gauche</br>
                         <li><u>Viser</u></li>
-                            - En haut : UP</br>
-                            - À droite : RIGHT</br>
-                            - À gauche : LEFT</br>
-                            - En bas : BOTTOM</br>
-                        <li><u>Mettre en pause</u></li>
-                            - ECHAP
+                            - Maintenir clic droit souris</br>
+                        <li><u>Roulade</u></li>
+                            - Barre espace (Spacebar) + <em>Déplacement</em>
                     </ul>
                     <span><b>Lore</b></span>
                         <span><em>Vous voilà dans un univers où survivre est une formalité... </br> Triomphez de vos ennemis et devenez plus fort, afin de peut-être... </br> ÊTRE LIBRE !</em></span>
@@ -418,8 +464,13 @@ function menuOptions(settingState, currMenu) {
 
 function menuGame(menuGameState) {
     system.inGame(inGame = false);
-    menuGameMusic.volume = 0.15;
-    menuGameMusic.play()
+    // menuGameMusic.volume = 0.15;
+    // menuGameMusic.play()
+    if(!menuMusic) {
+        menuStartMusic.volume = 0.15;
+        menuStartMusic.play();
+        menuMusic = true;
+    }; 
     const header = document.getElementById('menu-header');
     header.innerHTML = `
         <span class="game-header">
@@ -503,6 +554,9 @@ function menuGame(menuGameState) {
                 </div>
             </div>`;
             document.querySelector('.play-start').addEventListener('click', () => {
+                menuStartMusic.pause();
+                menuStartMusic.currentTime = 0;
+                menuMusic = false;
                 game();
             });
         }, 100);
@@ -511,6 +565,7 @@ function menuGame(menuGameState) {
             <div class="menu-ranking" id="menu-ranking">
                 <div>Classment général</div>
                 <div>Classment personnel</div>
+                <p>À venir...</p>
             </div>`;
     } else if(menuGameState == 3) {
         menuOptions(0, 1);
@@ -518,10 +573,11 @@ function menuGame(menuGameState) {
         menuBalise.innerHTML = `
             <div class="menu-profile" id="menu-profile">
                 <div>Profil</div>
+                <p>À venir...</p>
             </div>`;
     } else if(menuGameState == 0) {
-        menuGameMusic.pause();
-        menuGameMusic.currentTime = 0;
+        // menuGameMusic.pause();
+        // menuGameMusic.currentTime = 0;
         state = null;
         menu();
     }
@@ -544,112 +600,98 @@ function menuGame(menuGameState) {
     });
 }
 
-let gameData = { name: '', exp: 0, life: 0, atk: 0, def: 0, speed: 0 };
-let weaponData = {};
-let armorData = {};
-let skillData = {};
-let playerPosition = { x: 0, y: 0 };
+// let gameData = { name: '', exp: 0, life: 0, atk: 0, def: 0, speed: 0 };
+// scoreData =
 const gameContainer = document.getElementById('game-container');
+const header = document.getElementById('menu-header');
+const footer = document.getElementById('menu-footer');
+
 function game() {
     system.inGame(inGame = true);
     menuBalise.innerHTML = ``;
-    const header = document.getElementById('menu-header');
+    menuBalise.hidden = true;
     header.innerHTML = ``;
-    const footer = document.getElementById('menu-footer');
+    header.hidden = true;
     footer.innerHTML = ``;
-    gameData = { name: '', exp: 0, life: 20, atk: 5, def: 5, speed: 5 };
-    
+    footer.hidden = true;    
     gameContainer.hidden = false;
-    gameContainer.innerHTML = `
-        <img src="img/game/thf1-bk2.gif" id="player"  alt="player img" title="player" hidden>
-        <canvas id="player-3d" ></canvas>
-        <div id="pause-overlay" hidden>
-            <h2>PAUSE</h2>
-            <button class="pause-btn" id="resume">Reprendre (Échap)</button>
-            <button id="buttonSound" ${soundState == 0 ? `data-sound="on" class="buttonOptions">Son: ON` : `data-sound="off" class="buttonOptions sound-off">Son: OFF`}</button>
-            <button class="pause-btn" id="back">Retour menu</button> </br>
-            <div id="pause-lore"><em>Vous voilà dans un univers où survivre est une formalité... </br> Triomphez de vos ennemis et devenez plus fort, afin de peut-être... </br> ÊTRE LIBRE !</em></div> </br>
-            <div id="pause-shortcuts">
-                <u>Déplacement:</u>
-                - En haut : Z </br>
-                - À droite : D </br>
-                - À gauche : Q </br>
-                - En bas : S </br>
-                </br>
-                <u>Tirer:</u>
-                - Barre espace (Spacebar)
-            </div>
-            <div id="pause-shortcuts2">
-                <u>Viser:</u>
-                - En haut : UP </br>
-                - À droite : RIGHT </br>
-                - À gauche : LEFT </br>
-                - En bas : BOTTOM </br>
-                </br>
-                <u>Mettre en pause:</u>
-                - ECHAP (Escape)
-            </div>
-        </div>`;
-        init3DEnvironment();
-    startGame();
-    // testRender();
-    const overlay = document.getElementById('pause-overlay');
-    const player = document.getElementById('player');
-    const sound = document.getElementById('buttonSound');
-    sound.addEventListener('click', (e) => {
-        path.fileSettingsExists().then(exists => {
-            if (exists) {
-                console.log('✅');
-                return path.readFileSettings();
-            } else {
-                if(buttonSound.getAttribute('data-sound') == 'on') {
-                    buttonSound.setAttribute('data-sound', 'off');
-                    buttonSound.classList.add('sound-off');
-                } else {
-                    buttonSound.setAttribute('data-sound', 'on');
-                    buttonSound.classList.remove('sound-off');
-                }
-                e.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
-                buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
-            }
-        }).then(content => {
-            if (content) {
-                if(buttonSound.getAttribute('data-sound') == 'on') {
-                    buttonSound.setAttribute('data-sound', 'off');
-                    buttonSound.classList.add('sound-off');
-                } else {
-                    buttonSound.setAttribute('data-sound', 'on');
-                    buttonSound.classList.remove('sound-off');
-                }
-                e.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
-                path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
-                buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
-                buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
-            } else {
-                return console.log('📝');
-            }
-        }).catch(console.error);
-    });
-    // window.addEventListener('keydown', (e) => {       
+    // gameContainer.innerHTML = `
+        
+    //     <div id="pause-overlay" hidden>
+    //         <h2>PAUSE</h2>
+    //         <button class="pause-btn" id="resume">Reprendre (Échap)</button>
+    //         <button id="buttonSound" ${soundState == 0 ? `data-sound="on" class="buttonOptions">Son: ON` : `data-sound="off" class="buttonOptions sound-off">Son: OFF`}</button>
+    //         <button class="pause-btn" id="back">Retour menu</button> </br>
+    //         <div id="pause-lore"><em>Vous voilà dans un univers où survivre est une formalité... </br> Triomphez de vos ennemis et devenez plus fort, afin de peut-être... </br> ÊTRE LIBRE !</em></div> </br>
+    //         <div id="pause-shortcuts">
+    //             <u>Déplacement:</u>
+    //             - En haut : Z </br>
+    //             - À droite : D </br>
+    //             - À gauche : Q </br>
+    //             - En bas : S </br>
+    //             </br>
+    //             <u>Tirer:</u>
+    //             - Barre espace (Spacebar)
+    //         </div>
+    //         <div id="pause-shortcuts2">
+    //             <u>Viser:</u>
+    //             - En haut : UP </br>
+    //             - À droite : RIGHT </br>
+    //             - À gauche : LEFT </br>
+    //             - En bas : BOTTOM </br>
+    //             </br>
+    //             <u>Mettre en pause:</u>
+    //             - ECHAP (Escape)
+    //         </div>
+    //     </div><canvas></canvas>
+    //     `;
+    gameContainer.innerHTML = `<canvas></canvas>`;
+    playGame();
+    // const overlay = document.getElementById('pause-overlay');
+    // const player = document.getElementById('player');
+    // const sound = document.getElementById('buttonSound');
+    // sound.addEventListener('click', (e) => {
+    //     path.fileSettingsExists().then(exists => {
+    //         if (exists) {
+    //             console.log('✅');
+    //             return path.readFileSettings();
+    //         } else {
+    //             if(buttonSound.getAttribute('data-sound') == 'on') {
+    //                 buttonSound.setAttribute('data-sound', 'off');
+    //                 buttonSound.classList.add('sound-off');
+    //             } else {
+    //                 buttonSound.setAttribute('data-sound', 'on');
+    //                 buttonSound.classList.remove('sound-off');
+    //             }
+    //             e.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+    //             path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+    //             buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+    //             buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+    //         }
+    //     }).then(content => {
+    //         if (content) {
+    //             if(buttonSound.getAttribute('data-sound') == 'on') {
+    //                 buttonSound.setAttribute('data-sound', 'off');
+    //                 buttonSound.classList.add('sound-off');
+    //             } else {
+    //                 buttonSound.setAttribute('data-sound', 'on');
+    //                 buttonSound.classList.remove('sound-off');
+    //             }
+    //             e.target.textContent = `Son: ${buttonSound.getAttribute('data-sound') == 'off' ? 'OFF' : 'ON'}`;
+    //             path.writeFileSettings(buttonSound.getAttribute('data-sound') == 'off' ? '1' : '0');
+    //             buttonSound.getAttribute('data-sound') == 'off' ? soundState = 1 : soundState = 0;
+    //             buttonSound.getAttribute('data-sound') == 'off' ? muteUnmute(1) : muteUnmute(0);
+    //         } else {
+    //             return console.log('📝');
+    //         }
+    //     }).catch(console.error);
+    // });
+    
+    // window.addEventListener('keydown', (e) => {
+    //     // if (gameData.isDead) return;
+        
+    //     // const speed = gameData.speed * 0.1;
     //     switch(e.key.toLowerCase()) {
-    //         case 'z':
-    //             startWalking(1);
-    //             playerPosition.y -= gameData.speed;
-    //             break;
-    //         case 's':
-    //             startWalking(2);
-    //             playerPosition.y += gameData.speed;
-    //             break;
-    //         case 'q':
-    //             startWalking(3);
-    //             playerPosition.x -= gameData.speed;
-    //             break;
-    //         case 'd':
-    //             startWalking(4);
-    //             playerPosition.x += gameData.speed;
-    //             break;
     //         case 'escape':
     //             isPause ? isPause = false : isPause = true;
     //             isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
@@ -657,558 +699,215 @@ function game() {
     //             // gérer la pause
     //             break;
     //     }
-    //     player.style.transform = `translate(${playerPosition.x}px, ${playerPosition.y}px)`;
+    //     // updatePlayerPosition();
     // });
-    // window.addEventListener('keyup', (e) => {
-    //     switch(e.key.toLowerCase()) {
-    //         case 'z':
-    //             stopWalking();
-    //             break;
-    //         case 's':
-    //             stopWalking();
-    //             break;
-    //         case 'q':
-    //             stopWalking();
-    //             break;
-    //         case 'd':
-    //             stopWalking();
-    //             break;
-    //     }
+    // document.querySelectorAll('.pause-btn').forEach(elements => {
+    //     elements.addEventListener('click', function() {
+    //         if(elements.id == 'resume') {
+    //             isPause ? isPause = false : isPause = true;
+    //             isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
+    //             system.pause(isPause);
+    //             // gérer la fin de pause-
+    //         } else if(elements.id == 'back') {
+    //             isPause ? isPause = false : isPause = true;
+    //             system.pause(isPause);
+    //             gameContainer.innerHTML = ``;
+    //             gameContainer.hidden = true;
+    //             menuBalise.hidden = false;
+    //             header.hidden = false;
+    //             footer.hidden = false;
+    //             system.inGame(inGame = false);
+    //             menuGame(1);
+    //         }
+    //     });
     // });
-    window.addEventListener('keydown', (e) => {
-        if (gameData.isDead) return;
-        
-        const speed = gameData.speed * 0.1;
-        switch(e.key.toLowerCase()) {
-            case 'z':
-                playerPosition.y -= speed;
-                threeJS.playerModel.rotation.x = Math.sin(Date.now()*0.01)*0.2;
-                break;
-            case 's':
-                playerPosition.y += speed;
-                threeJS.playerModel.rotation.x = Math.sin(Date.now()*0.01)*0.2;
-                break;
-            case 'q':
-                playerPosition.x -= speed;
-                threeJS.playerModel.rotation.y = Math.PI;
-                break;
-            case 'd':
-                playerPosition.x += speed;
-                threeJS.playerModel.rotation.y = 0;
-                break;
-            case ' ':
-                attackNearestMonster();
-                break;
-            case 'escape':
-                isPause ? isPause = false : isPause = true;
-                isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
-                system.pause(isPause);
-                // gérer la pause
-                break;
-        }
-        updatePlayerPosition();
-    });
-    document.querySelectorAll('.pause-btn').forEach(elements => {
-        elements.addEventListener('click', function() {
-            if(elements.id == 'resume') {
-                isPause ? isPause = false : isPause = true;
-                isPause ? overlay.style = 'display: flex' : overlay.style = 'display: none';
-                system.pause(isPause);
-                // gérer la fin de pause-
-            } else if(elements.id == 'back') {
-                isPause ? isPause = false : isPause = true;
-                system.pause(isPause);
-                gameContainer.hidden = true;
-                menuGame(1);
-            }
-        });
-    });
 }
 
-// permet de faire l'animation de marche
-// let isWalking = false;
-// let currentStep = 0;
-// let animationId = null;
-// const walkSpeed = 350; // ms
-// const stepImages1 = [
-//     'img/game/thf1-bk1.gif',
-//     'img/game/thf1-bk2.gif'
-// ];
-// const stepImages2 = [
-//     'img/game/thf1-fr1.gif',
-//     'img/game/thf1-fr2.gif'
-// ];
-// const stepImages3 = [
-//     'img/game/thf1-lf1.gif',
-//     'img/game/thf1-lf2.gif'
-// ];
-// const stepImages4 = [
-//     'img/game/thf1-rt1.gif',
-//     'img/game/thf1-rt2.gif'
-// ];
-// function startWalking(type) {
-//     if (!isWalking) {
-//         isWalking = true;
-//         animateWalk(type);
-//     }
-// }
-// function stopWalking(type) {
-//     isWalking = false;
-//     cancelAnimationFrame(animationId);
-//     if(type == 1) {
-//         player.src = stepImages1[0];
-//     } else if(type == 2) {
-//         player.src = stepImages2[0];
-//     } else if(type == 3) {
-//         player.src = stepImages3[0];
-//     } else if(type == 4) {
-//         player.src = stepImages4[0];
-//     }   
-// }
-// function animateWalk(type) {
-//     if (!isWalking) return;
-//     if(type == 1) {
-//         currentStep = (currentStep + 1) % stepImages1.length;
-//         player.src = stepImages1[currentStep];
-//     } else if(type == 2) {
-//         currentStep = (currentStep + 1) % stepImages2.length;
-//         player.src = stepImages2[currentStep];
-//     } else if(type == 3) {
-//         currentStep = (currentStep + 1) % stepImages3.length;
-//         player.src = stepImages3[currentStep];
-//     } else if(type == 4) {
-//         currentStep = (currentStep + 1) % stepImages4.length;
-//         player.src = stepImages4[currentStep];
-//     } 
-//     animationId = requestAnimationFrame(() => {
-//         setTimeout(() => animateWalk(type), walkSpeed);
+let currentScore = 0;
+let currentKills = 0;
+let currentLevels = 0;
+let currentXp = 0;
+let totalTime = 0;
+
+const ast = await loadAssets()
+// const home = new Home()
+async function playGame() {
+  const scene = new Scene()
+
+  const rubies = ast.meshesRubis.map((m) => new Rubis(m))
+  const hearts = ast.meshesHeart.map((m) => new Heart(m))
+  const bloks = ast.meshesBlock.map((m) => new Block(m, physic))
+  const boxes = ast.meshesBox.map((m) => new Box(m, physic))
+  const areas = ast.meshesArea.map((m) => new Area(m))
+  const grasses = ast.meshesGrass.map((m) => new Grass(m))
+  const player = new Player(clone(ast.meshPlayer), ast.spawn, physic)
+  const mobs1 = ast.spawnsMobA.map((m) => new Mob1(clone(ast.meshMob1), m, physic))
+  const mobs2 = ast.spawnsMobB.map((m) => new Mob2(clone(ast.meshMob2), m, physic))
+  const world = new World(ast.meshesSolid, ast.meshesCollider, physic)
+  const camera = new Camera(player)
+  const focus = new Focus()
+  const ui = new UI(player)
+  const light = new Light()
+  const canvas = document.querySelector('canvas');
+  const graphic = new Graphic(scene, camera, focus, canvas);
+  const mobs = mobs1.concat(mobs2)
+  const rules = new Rules(player, bloks, boxes, areas, mobs, world, light)
+
+  scene.add(...rubies)
+  scene.add(...hearts)
+  scene.add(...bloks)
+  scene.add(...boxes)
+  scene.add(...grasses)
+  scene.add(...mobs)
+  scene.add(player)
+  scene.add(world)
+  scene.add(light)
+
+  player.kills = currentKills;
+  player.levels = currentLevels;
+  player.score = currentScore;
+  player.xp = currentXp;
+  
+  for(let i = 0; i < currentLevels; i++) {
+    if(i != 0 && i%2) mobs1.hp += 1, mobs2.hp += 1
+        else if(i =! 0 && i%1) mobs1.atk += 0.5, mobs2.atk += 1
+  }
+//   if(currentLevels == 0) mobs.atk += 0.5, mobs.hp += 1
+//     else if(currentLevels == 10) p.hp += 1, p.hpMax += 1
+//     else if(currentLevels == 15) p.hp += 1, p.hpMax += 1
+//     else if(currentLevels == 25) p.hp += 1, p.hpMax += 1
+//     else if(currentLevels == 30) p.hp += 1, p.hpMax += 1
+
+  graphic.onUpdate((dt) => {
+    physic.step()
+    for (const mob of mobs) mob.update(dt, player)
+    for (const rubis of rubies) rubis.update(dt, player)
+    for (const heart of hearts) heart.update(dt, player)
+    for (const blok of bloks) blok.update(player)
+    for (const box of boxes) box.update(dt)
+    player.update(dt, mobs, grasses, boxes, areas)
+    Grass.update(dt, player)
+    world.update(dt)
+    focus.update(dt, player, camera)
+    camera.update(player)
+    rules.update(dt)
+    light.update(player)
+    ui.update(player)
+  })
+
+  Grass.onCut((pos) => {
+    if (proba(0.05)) createRubis(pos)
+    if (proba(0.05) && player.hp < 4) createHeart(pos)
+  })
+
+  Box.onBreak((pos) => {
+    for (let i = 0; i < 4; i++) createRubis(pos)
+    createRubis(pos, 10)
+  })
+
+  Box.onDelete((instance) => {
+    removeFromArray(instance, boxes)
+  })
+
+  Mob1.onDelete((pos, instance) => {
+    if (proba(0.2)) createHeart(pos)
+    if (proba(0.2)) createRubis(pos, 10)
+    removeFromArray(instance, mobs)
+    player.kills++;
+    player.score = player.score + 50;
+    player.xp = player.xp + 80;
+  })
+
+  Mob2.onDelete((pos, instance) => {
+    if (proba(0.25)) createHeart(pos)
+    removeFromArray(instance, mobs)
+    player.kills++;
+    player.score = player.score + 100;
+    player.xp = player.xp + 10;
+  })
+
+  // home.onStart(() => {
+  //   home.hide()
+    world.playSound()
+    player.active = true
+  // })
+
+  rules.onGameover(() => {
+    const objects3D = { player, mobs, bloks, boxes, grasses, hearts, rubies, focus, world }
+    cleanGame(objects3D, graphic, ui)
+    gameContainer.innerHTML = ``;
+    gameContainer.hidden = true;
+    menuBalise.hidden = false;
+    header.hidden = false;
+    footer.hidden = false;
+    system.inGame(inGame = false);
+    currentKills += player.kills;
+    currentLevels ++;
+    currentScore += player.score;
+    currentXp += player.xp;
+    totalTime += performance.now() - startTime;
+    scoreData = {
+        score_user_id: userCoData.user_id,
+        score_score: currentScore,
+        score_level_player: player.xpLevels,
+        score_level_stage: currentLevels,
+        score_kill: currentKills,
+        score_time: formatDurationForMySQL(totalTime)
+    };
+    db.ipcRenderer.send('addScore', scoreData);
+    userData = {
+        user_id: scoreData.score_user_id,
+        user_bestscore: userData.user_bestscore > currentScore ? userData.user_bestscore : currentScore,
+        user_count_death: userData.user_count_death + 1,
+    };
+    db.ipcRenderer.send('addUserScore', userData);
+    currentKills = 0;
+    currentLevels = 0;
+    currentScore = 0;
+    currentXp = 0;
+    menuGame(1);
+  })
+  const startTime = performance.now();
+  rules.onLevel(() => {
+    const objects3D = { player, mobs, bloks, boxes, grasses, hearts, rubies, focus, world }
+    cleanGameLevel(objects3D, graphic);
+    player.score = player.score + 75;
+    currentKills += player.kills;
+    currentLevels ++;
+    currentScore += player.score;
+    currentXp += player.xp;
+    totalTime += performance.now() - startTime;
+    playGame();
+  })
+
+  // home.show()
+  graphic.start()
+
+  function createRubis(pos, val = 1) {
+    const ruby = new Rubis(ast.meshesRubis[0], spreadAround(pos, 1, 1), val)
+    rubies.push(ruby)
+    scene.add(ruby)
+  }
+
+  function createHeart(pos) {
+    const heart = new Heart(ast.meshesHeart[0], spreadAround(pos, 1, 1))
+    hearts.push(heart)
+    scene.add(heart)
+  }
+
+  if(currentLevels == 2) {
+    notifData = { title: "Mais que ?...", content: "Pourquoi tout semble pareil ? ... Pourrai-je m'en sortir ?!" };
+    db.ipcRenderer.send('sendNotification', notifData);
+  } 
+}
+
+// function modalLevel2() { 
+//     openModal();
+//     modalTitle.innerHTML = `<span>Hein... ??</span>`;
+//     modalContent.innerHTML = `</br></br></br><form><span><p>Que se passe-t-il ?! C'est exactement le même endroit... le même ressentit... oh non cela recommen-</p></span>`;
+//     modalContent.innerHTML += `</br></br></br><span type="submit" id='buttonPseudo'>Créer</span></form>`;
+//     const buttonPseudo = document.getElementById('buttonPseudo');
+//     buttonPseudo.addEventListener('click', () => {
+//         closeModalFunction();
 //     });
 // }
-
-// function addWeapon(name, life, atk, speed) {
-//     weaponData.push({
-//         name: name,
-//         life: life,
-//         atk: atk,
-//         speed: speed });
-//     gameData = { name: gameData.name,
-//         exp: gameData.exp,
-//         life: gameData.life + life,
-//         atk: gameData.atk + atk,
-//         def: gameData.def,
-//         speed: gameData.speed + speed };
-// }
-
-function addArmor(name, life, def, speed) {
-    armorData.push({
-        name: name,
-        life: life,
-        def: def,
-        speed: speed });
-    gameData = { name: gameData.name,
-        exp: gameData.exp,
-        life: gameData.life + life,
-        atk: gameData.atk,
-        def: gameData.def + def,
-        speed: gameData.speed + speed };
-}
-
-function addSkill(name, life, atk, def, speed) {
-    skillData.push({
-        name: name,
-        life: life,
-        atk: atk,
-        def: def,
-        speed: speed });
-    gameData = { name: gameData.name,
-        exp: gameData.exp,
-        life: gameData.life + life,
-        atk: gameData.atk + atk,
-        def: gameData.def + def,
-        speed: gameData.speed + speed };
-}
-
-
-
-
-
-  
-  // Données des salles
-  let dungeon = {
-    currentRoom: null,
-    roomHistory: [],
-    roomConfig: {
-      types: ['safe', 'normal', 'elite', 'boss'],
-      difficultyScaling: 0.15,
-      baseMonsterCount: 3
-    }
-  };
-  
-  // Données 3D
-  let threeJS = {
-    scene: null,
-    camera: null,
-    renderer: null,
-    playerModel: null,
-    roomObjects: []
-  };
-  function init3DEnvironment() {
-    const container = document.getElementById('game-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    threeJS.scene = new THREE.Scene();
-    
-    // Caméra orthographique adaptée au conteneur
-    threeJS.camera = new THREE.OrthographicCamera(
-        width / -2, width / 2,
-        height / 2, height / -2,
-        1, 1000
-    );
-    threeJS.camera.position.set(0, 15, 0);
-    threeJS.camera.lookAt(0, 0, 0);
-    
-    // Renderer avec optimisation
-    threeJS.renderer = new THREE.WebGLRenderer({
-        canvas: document.getElementById('player-3d'),
-        antialias: true,
-        powerPreference: "high-performance"
-    });
-    threeJS.renderer.setSize(width, height);
-    
-    // Éclairage optimisé
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    threeJS.scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    threeJS.scene.add(directionalLight);
-    
-    createPlayerModel();
-}
-  function generateNewRoom() {
-    // Calcul de la difficulté
-    const difficulty = 1 + (gameData.currentFloor * dungeon.roomConfig.difficultyScaling);
-    
-    // Type de salle aléatoire
-    let roomType;
-    if (gameData.currentFloor % 10 === 9) {
-      roomType = 'boss';
-    } else {
-      const weights = {
-        normal: 70,
-        elite: 25,
-        safe: gameData.currentFloor === 0 ? 100 : 5
-      };
-      roomType = weightedRandom(weights);
-    }
-  
-    // Génération des monstres
-    const monsters = [];
-    if (roomType !== 'safe') {
-      const count = Math.floor(
-        dungeon.roomConfig.baseMonsterCount * 
-        (roomType === 'elite' ? 1.5 : 1) * 
-        difficulty
-      );
-      
-      for (let i = 0; i < count; i++) {
-        monsters.push(generateMonster(roomType, difficulty));
-      }
-    }
-  
-    // Création de la salle
-    dungeon.currentRoom = {
-      type: roomType,
-      difficulty,
-      monsters,
-      isCleared: false,
-      position: { x: 0, y: gameData.currentFloor * 10, z: 0 }
-    };
-  
-    // Génération 3D
-    generate3DRoom();
-  }
-  
-  function generateMonster(roomType, difficulty) {
-    const types = {
-      normal: ['goblin', 'slime'],
-      elite: ['orc', 'skeleton'],
-      boss: ['dragon']
-    };
-    
-    const type = types[roomType][Math.floor(Math.random() * types[roomType].length)];
-    
-    return {
-      type,
-      health: Math.floor(30 * difficulty),
-      attack: Math.floor(8 * difficulty),
-      position: getRandomPositionInRoom()
-    };
-  }
-
-function createPlayerModel() {
-    const geometry = new THREE.BoxGeometry(1, 2, 1); // Taille augmentée
-    const material = new THREE.MeshPhongMaterial({
-        color: 0x00ff00,
-        shininess: 100,
-        wireframe: false // Assurez-vous que ce n'est pas en mode filaire
-    });
-    
-    threeJS.playerModel = new THREE.Mesh(geometry, material);
-    threeJS.playerModel.position.set(0, 1, 0); // Y = 1 pour être au-dessus du sol
-    threeJS.scene.add(threeJS.playerModel);
-    
-    // TEST: Ajoutez une lumière directionnelle ciblée sur le joueur
-    const playerLight = new THREE.DirectionalLight(0xffffff, 1);
-    playerLight.position.set(0, 10, 5);
-    playerLight.target = threeJS.playerModel;
-    threeJS.scene.add(playerLight);
-}
-  
-function generate3DRoom() {
-    // Nettoyage
-    threeJS.roomObjects.forEach(obj => {
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) obj.material.dispose();
-        threeJS.scene.remove(obj);
-    });
-    threeJS.roomObjects = [];
-
-    // Dimensions adaptatives
-    const container = document.getElementById('game-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    const roomSize = Math.min(width, height) * 0.8;
-
-    // Sol
-    const floorGeometry = new THREE.PlaneGeometry(roomSize, roomSize);
-    const floorMaterial = new THREE.MeshStandardMaterial({
-        color: getRoomColor(dungeon.currentRoom.type),
-        side: THREE.DoubleSide
-    });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    threeJS.scene.add(floor);
-    threeJS.roomObjects.push(floor);
-
-    // Murs
-    const wallHeight = 5;
-    const wallThickness = 0.5;
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x8888aa });
-    
-    const walls = [
-        { position: [0, wallHeight/2, roomSize/2], size: [roomSize, wallHeight, wallThickness] },
-        { position: [0, wallHeight/2, -roomSize/2], size: [roomSize, wallHeight, wallThickness] },
-        { position: [roomSize/2, wallHeight/2, 0], size: [wallThickness, wallHeight, roomSize], rotationY: Math.PI/2 },
-        { position: [-roomSize/2, wallHeight/2, 0], size: [wallThickness, wallHeight, roomSize], rotationY: Math.PI/2 }
-    ];
-
-    walls.forEach(wallConfig => {
-        const wall = new THREE.Mesh(
-            new THREE.BoxGeometry(...wallConfig.size),
-            wallMaterial
-        );
-        wall.position.set(...wallConfig.position);
-        if (wallConfig.rotationY) wall.rotation.y = wallConfig.rotationY;
-        threeJS.scene.add(wall);
-        threeJS.roomObjects.push(wall);
-    });
-}
-
-  function gameLoop() {
-    if (!gameData.isDead) {
-        updatePlayerPosition();
-        checkRoomCompletion();
-        render3DScene();
-        requestAnimationFrame(gameLoop);
-    } else {
-        showGameOver();
-    }
-}
-
-// function render3DScene() {
-//     // Mise à jour de la caméra pour suivre le joueur
-//     threeJS.camera.position.x = playerPosition.x * 0.1;
-//     threeJS.camera.position.z = playerPosition.y * 0.1 + 10;
-//     threeJS.camera.lookAt(playerPosition.x * 0.1, 0, playerPosition.y * 0.1);
-    
-//     threeJS.renderer.render(threeJS.scene, threeJS.camera);
-// }
-function render3DScene() {
-    if (!threeJS.renderer || !threeJS.scene || !threeJS.camera) {
-        console.error("Composants Three.js manquants !");
-        return;
-    }
-    
-    // Mise à jour de la position de la caméra pour suivre le joueur
-    threeJS.camera.position.x = playerPosition.x * 0.1;
-    threeJS.camera.position.z = playerPosition.y * 0.1 + 10;
-    threeJS.camera.lookAt(playerPosition.x * 0.1, 0, playerPosition.y * 0.1);
-    
-    threeJS.renderer.render(threeJS.scene, threeJS.camera);
-}
-  
-  function checkRoomCompletion() {
-    if (dungeon.currentRoom.monsters.every(m => m.health <= 0)) {
-      dungeon.currentRoom.isCleared = true;
-      showRoomTransition();
-    }
-  }
-  
-  function showRoomTransition() {
-    gsap.to(threeJS.camera.position, {
-        y: threeJS.camera.position.y + 10,
-        duration: 1,
-        onComplete: () => {
-            gameData.currentFloor++;
-            playerPosition = {x:0, y:0}; // Reset position
-            threeJS.playerModel.position.set(0, 0.5, 0); // Reset modèle 3D
-            generateNewRoom();
-        }
-    });
-}
-
-  function weightedRandom(weights) {
-    const total = Object.values(weights).reduce((a, b) => a + b);
-    let random = Math.random() * total;
-    
-    for (const [key, weight] of Object.entries(weights)) {
-      if (random < weight) return key;
-      random -= weight;
-    }
-  }
-  
-  function getRoomColor(roomType) {
-    const colors = {
-      safe: 0x88ccff,
-      normal: 0x88ff88,
-      elite: 0xffcc00,
-      boss: 0xff0000
-    };
-    return colors[roomType];
-  }
-  
-  function getRandomPositionInRoom() {
-    return {
-      x: Math.random() * 8 - 4,
-      z: Math.random() * 8 - 4
-    };
-  }
-//   function testRender() {
-//     const scene = new THREE.Scene();
-//     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-//     camera.position.z = 5;
-    
-//     const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('player-3d')});
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-    
-//     const geometry = new THREE.BoxGeometry();
-//     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-//     const cube = new THREE.Mesh(geometry, material);
-//     scene.add(cube);
-    
-//     function animate() {
-//         requestAnimationFrame(animate);
-//         cube.rotation.x += 0.01;
-//         cube.rotation.y += 0.01;
-//         renderer.render(scene, camera);
-//     }
-//     animate();
-// }
-  // Initialisation
-function startGame() {
-    gameData = { 
-      name: '', 
-      exp: 0, 
-      life: 20, 
-      atk: 5, 
-      def: 5, 
-      speed: 5,
-      currentFloor: 0,
-      isDead: false
-    };
-    // const testGeometry = new THREE.BoxGeometry(5, 5, 5);
-    // const testMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    // const testCube = new THREE.Mesh(testGeometry, testMaterial);
-    // threeJS.scene.add(testCube);
-    // init3DEnvironment();
-    generateNewRoom();
-    gameLoop(); // Cette ligne doit être exécutée
-    console.log("Game started"); // Vérifiez dans la console
-    requestAnimationFrame(function animate() {
-        render3DScene();
-        requestAnimationFrame(animate);
-    });
-    console.log("Three.js prêt - Version", THREE.REVISION); 
-console.log("Objets dans la scène:", threeJS.scene.children);
-if (threeJS.scene.children.length === 0) {
-    console.error("La scène est vide !");
-} else {
-    threeJS.scene.children.forEach(obj => {
-        console.log(obj.type, obj.position);
-    });
-    console.log("Canvas dimensions:", 
-        threeJS.renderer.domElement.width, 
-        threeJS.renderer.domElement.height);
-    console.log("Canvas in DOM:", document.getElementById('player-3d') === threeJS.renderer.domElement);
-}
-console.log("Player scale:", threeJS.playerModel.scale);
-console.log("Floor dimensions:", threeJS.roomObjects[0].geometry.parameters);
-  }
-  
-  // Ajout d'équipement (existant)
-  function addWeapon(name, life, atk, speed) {
-    weaponData.push({ name, life, atk, speed });
-    gameData.life += life;
-    gameData.atk += atk;
-    gameData.speed += speed;
-  }
-
-function addWalls() {
-    const wallHeight = 5;
-    const wallDepth = 0.5;
-    const wallMaterial = new THREE.MeshStandardMaterial({
-        color: 0x8888aa,
-        metalness: 0.2,
-        roughness: 0.7
-    });
-
-    // Positions des murs (nord, sud, est, ouest)
-    const positions = [
-        {x:0, z:10, rotY:0, size:[20, wallHeight, wallDepth]},
-        {x:0, z:-10, rotY:0, size:[20, wallHeight, wallDepth]},
-        {x:10, z:0, rotY:Math.PI/2, size:[20, wallHeight, wallDepth]},
-        {x:-10, z:0, rotY:Math.PI/2, size:[20, wallHeight, wallDepth]}
-    ];
-
-    positions.forEach(pos => {
-        const wall = new THREE.Mesh(
-            new THREE.BoxGeometry(...pos.size),
-            wallMaterial
-        );
-        wall.position.set(pos.x, wallHeight/2, pos.z);
-        wall.rotation.y = pos.rotY;
-        threeJS.scene.add(wall);
-        threeJS.roomObjects.push(wall);
-    });
-}
-
-function createMonsterModel(type) {
-    const geometry = new THREE.BoxGeometry(0.8, 1.2, 0.8);
-    const material = new THREE.MeshPhongMaterial({ 
-        color: type === 'dragon' ? 0xff0000 : 0x8b0000 
-    });
-    return new THREE.Mesh(geometry, material);
-}
-
-function updatePlayerPosition() {
-    const container = document.getElementById('game-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    const roomSize = Math.min(width, height) * 0.8;
-    
-    // Normalisation de la position par rapport à la taille de la salle
-    threeJS.playerModel.position.x = (playerPosition.x / gameData.speed) * (roomSize/20);
-    threeJS.playerModel.position.z = (playerPosition.y / gameData.speed) * (roomSize/20);
-}

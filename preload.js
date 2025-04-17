@@ -1,4 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
+// const THREE = require('three');
+// const { GLTFLoader } = require('three/examples/jsm/loaders/GLTFLoader');
 
 contextBridge.exposeInMainWorld('versions', {
   node: () => process.versions.node,
@@ -29,3 +31,7 @@ contextBridge.exposeInMainWorld('path', {
   readFileSettings: () => ipcRenderer.invoke('readFileSettings'),
   writeFileSettings: (fileData) => ipcRenderer.send('writeFileSettings', fileData)
 });
+// contextBridge.exposeInMainWorld('api', {
+//   THREE: THREE,
+//   GLTFLoader: GLTFLoader
+// });

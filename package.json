@@ -1,23 +1,36 @@
 {
-  "name": "roguelike",
+  "name": "test",
   "productName": "Roguelike Project 1.0.0",
   "description": "Roguelike game by Romaric",
   "keywords": [],
   "main": "./main.js",
   "version": "1.0.0",
-  "author": "Romaric MION",
+  "author": "Romaric",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder build --win"
   },
   "dependencies": {
     "@dimforge/rapier2d": "^0.15.0",
     "@dimforge/rapier3d": "^0.15.0",
+    "@dimforge/rapier3d-compat": "^0.15.0",
     "gsap": "^3.12.7",
     "mysql2": "^3.14.0",
     "three": "^0.175.0"
   },
   "devDependencies": {
+    "@types/three": "^0.175.0",
     "electron": "^35.0.1",
     "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.roguelike.project",
+    "productName": "RoguelikeProject",
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
   }
 }
