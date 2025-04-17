@@ -70,7 +70,6 @@ La table **`score`** contient les scores des joueurs :
             - Statistiques du joueur (nombre de morts, meilleur score, etc.).
             - Informations sur le personnage.
             - **Classement des joueurs**.
-            - (Scores des 3 dernières parties ?). 
         - **Classement des joueurs** :
             - Classement général.
             - Historique des scores du joueur.
